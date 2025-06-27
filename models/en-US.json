@@ -1,0 +1,217 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "red hook ferry",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "GetNextFerriesIntent",
+          "slots": [],
+          "samples": [
+            "when is the next ferry",
+            "when is the next ferry from red hook",
+            "what time is the next ferry",
+            "what time is the next ferry from red hook",
+            "check ferry schedule",
+            "check red hook ferry schedule",
+            "ferry times",
+            "red hook ferry times",
+            "next ferry",
+            "next ferry from red hook",
+            "ferry schedule",
+            "red hook ferry schedule",
+            "when do ferries leave",
+            "when do ferries leave red hook",
+            "upcoming ferries",
+            "upcoming red hook ferries",
+            "show me the ferry schedule",
+            "what ferries are coming up",
+            "what's next",
+            "next departures",
+            "show me next departures",
+            "what are the next departures"
+          ]
+        },
+        {
+          "name": "GetFerriesWithDirectionIntent",
+          "slots": [
+            {
+              "name": "destination",
+              "type": "FERRY_DESTINATION"
+            }
+          ],
+          "samples": [
+            "ferries to {destination}",
+            "ferries going to {destination}",
+            "ferries towards {destination}",
+            "next ferry to {destination}",
+            "when is the next ferry to {destination}",
+            "ferry to {destination}",
+            "to {destination}",
+            "{destination}",
+            "ferries heading to {destination}",
+            "departures to {destination}",
+            "schedule to {destination}",
+            "ferry times to {destination}"
+          ]
+        },
+        {
+          "name": "GetFerriesAfterTimeIntent",
+          "slots": [
+            {
+              "name": "time",
+              "type": "AMAZON.TIME"
+            }
+          ],
+          "samples": [
+            "ferries after {time}",
+            "ferries leaving after {time}",
+            "what ferries leave after {time}",
+            "show me ferries after {time}",
+            "ferries departing after {time}",
+            "next ferries after {time}",
+            "ferry schedule after {time}",
+            "when do ferries leave after {time}",
+            "ferries later than {time}",
+            "departures after {time}"
+          ]
+        },
+        {
+          "name": "GetServiceAlertsIntent",
+          "slots": [],
+          "samples": [
+            "are there any service alerts",
+            "check for alerts",
+            "service alerts",
+            "any delays",
+            "ferry alerts",
+            "service disruptions",
+            "are there any delays",
+            "check service status",
+            "ferry service alerts",
+            "any service issues",
+            "service updates"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "FERRY_DESTINATION",
+          "values": [
+            {
+              "name": {
+                "value": "Manhattan"
+              },
+              "id": "manhattan"
+            },
+            {
+              "name": {
+                "value": "Wall Street"
+              },
+              "id": "wall_street"
+            },
+            {
+              "name": {
+                "value": "Wall St"
+              },
+              "id": "wall_st"
+            },
+            {
+              "name": {
+                "value": "Pier 11"
+              },
+              "id": "pier_11"
+            },
+            {
+              "name": {
+                "value": "Financial District"
+              },
+              "id": "financial_district"
+            },
+            {
+              "name": {
+                "value": "Corlears Hook"
+              },
+              "id": "corlears_hook"
+            },
+            {
+              "name": {
+                "value": "Dumbo"
+              },
+              "id": "dumbo"
+            },
+            {
+              "name": {
+                "value": "Fulton Ferry"
+              },
+              "id": "fulton_ferry"
+            },
+            {
+              "name": {
+                "value": "Atlantic Avenue"
+              },
+              "id": "atlantic_avenue"
+            },
+            {
+              "name": {
+                "value": "BBP"
+              },
+              "id": "bbp"
+            },
+            {
+              "name": {
+                "value": "Pier 6"
+              },
+              "id": "pier_6"
+            },
+            {
+              "name": {
+                "value": "Bay Ridge"
+              },
+              "id": "bay_ridge"
+            },
+            {
+              "name": {
+                "value": "Sunset Park"
+              },
+              "id": "sunset_park"
+            },
+            {
+              "name": {
+                "value": "BAT"
+              },
+              "id": "bat"
+            },
+            {
+              "name": {
+                "value": "Governors Island"
+              },
+              "id": "governors_island"
+            },
+            {
+              "name": {
+                "value": "Gov Island"
+              },
+              "id": "gov_island"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
