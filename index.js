@@ -16,7 +16,7 @@ async function ensureServiceInitialized() {
       await ferryService.initialize();
       serviceInitialized = true;
     } catch (error) {
-      console.error('Failed to initialize ferry service:', error);
+      console.error('Failed to initialize ferry service:', error.message);
       // Continue with fallback behavior
     }
   }
@@ -139,14 +139,30 @@ const GetFerriesAfterTimeIntentHandler = {
       // Ensure ferry service is initialized with static GTFS data
       await ensureServiceInitialized();
       
-      // Extract time from slot
+      // Extract and validate time from slot
       const timeSlot = slots.time;
       let searchTime = new Date();
       
       if (timeSlot && timeSlot.value) {
         const parsedTime = Utils.parseTimeFromSpeech(timeSlot.value);
         if (parsedTime) {
+          // Validate that the time is reasonable (not more than 24 hours in the future)
+          const now = moment().tz(config.TIMEZONE);
+          const timeDiff = parsedTime.diff(now, 'hours');
+          
+          if (timeDiff > 24) {
+            return handlerInput.responseBuilder
+              .speak("I can only check ferry times for today and tomorrow. Please ask for a time within the next 24 hours.")
+              .reprompt("What time would you like to check for ferries?")
+              .getResponse();
+          }
+          
           searchTime = parsedTime.toDate();
+        } else {
+          return handlerInput.responseBuilder
+            .speak("I didn't understand that time. Please try saying something like 'after 3 PM' or 'after 2:30'.")
+            .reprompt("What time would you like to check for ferries after?")
+            .getResponse();
         }
       }
       

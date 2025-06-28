@@ -28,10 +28,10 @@ class FerryService {
         console.warn('Red Hook stop not found in GTFS data, falling back to configured stop ID');
         this.redHookStop = { id: config.RED_HOOK_STOP_ID, name: 'Red Hook' };
       } else {
-        console.log(`Found Red Hook stop: ${this.redHookStop.name} (${this.redHookStop.id})`);
+        // Found Red Hook stop from GTFS data
       }
     } catch (error) {
-      console.error('Failed to initialize GTFS static data:', error);
+      console.error('Failed to initialize GTFS static data:', error.message);
       // Fallback to configured values
       this.redHookStop = { id: config.RED_HOOK_STOP_ID, name: 'Red Hook' };
     }
@@ -54,11 +54,7 @@ class FerryService {
       
       return feed;
     } catch (error) {
-      console.error('Error fetching ferry data:', {
-        message: error.message,
-        code: error.code,
-        url: config.GTFS_REALTIME_TRIP_UPDATES
-      });
+      console.error('Error fetching ferry data:', error.message);
       return null;
     }
   }
@@ -165,13 +161,9 @@ class FerryService {
         }
       }
 
-      console.log(`Found ${departures.length} departures from real-time data`);
-
       // If no real-time departures found, fall back to static schedule
       if (departures.length === 0 && this.staticService) {
-        console.log('No real-time Red Hook departures found, falling back to static schedule');
         departures = this.getStaticScheduleDepartures(searchTime, direction);
-        console.log(`Found ${departures.length} departures from static schedule`);
       }
 
       // Sort by departure time and remove duplicates by time
@@ -192,7 +184,7 @@ class FerryService {
       return uniqueDepartures.slice(0, config.MAX_DEPARTURES);
       
     } catch (error) {
-      console.error('Error parsing ferry data:', error);
+      console.error('Error parsing ferry data:', error.message);
       return this.getFallbackDepartures(fromTime, direction);
     }
   }
@@ -213,7 +205,7 @@ class FerryService {
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
       const currentTimeStr = searchTime.format('HH:mm:ss');
       
-      console.log(`Filtering for ${isWeekend ? 'weekend' : 'weekday'} schedule (day ${dayOfWeek})`);
+      // Filter for appropriate service schedule
       
       // Find all South Brooklyn trips that serve Red Hook
       for (const [tripId, trip] of this.staticService.cache.trips) {
@@ -221,16 +213,24 @@ class FerryService {
           continue;
         }
         
-        // Apply basic day-of-week filtering
-        // Skip weekday-only trips on weekends and vice versa
-        // This is a heuristic since we don't have calendar.txt
-        const tripIdNum = parseInt(tripId);
+        // Apply service-based day-of-week filtering
+        // Based on GTFS analysis:
+        // - Service 7: Weekend service (42 trips)
+        // - Services 1-5: Regular weekday service (32 trips each)
+        // - Services 8,10,11,12: Limited weekday service (21 trips each)
+        // - Services 6,9: Special/limited service (1 trip each)
         if (isWeekend) {
-          // On weekends, prefer higher trip IDs (often weekend service)
-          // and skip obvious weekday patterns
-          if (tripIdNum < 3000) continue;
+          // On weekends, only use Service 7 which has the correct weekend schedule
+          if (trip.serviceId !== '7') continue;
+          
+          // TEMPORARY FIX: Only include Direction 0 (to Bay Ridge) for weekends
+          // Direction 1 (to Manhattan) trips appear in GTFS but may not be running
+          if (trip.directionId != 0) continue;
         } else {
-          // On weekdays, use all trips but prefer lower IDs for regular service
+          // On weekdays, use Services 1-5 for regular service and 8,10,11,12 for limited service
+          // Exclude Service 7 (weekend) and Services 6,9 (too limited)
+          const weekdayServices = ['1', '2', '3', '4', '5', '8', '10', '11', '12'];
+          if (!weekdayServices.includes(trip.serviceId)) continue;
         }
         
         // Apply direction filter if specified
@@ -261,8 +261,8 @@ class FerryService {
           }
         }
         
-        // Skip if departure is too far in the future (next 4 hours)
-        if (departureTime.diff(searchTime, 'hours') > 4) {
+        // Skip if departure is too far in the future (next 12 hours for better user experience)
+        if (departureTime.diff(searchTime, 'hours') > 12) {
           continue;
         }
         
@@ -276,7 +276,7 @@ class FerryService {
       return departures;
       
     } catch (error) {
-      console.error('Error getting static schedule departures:', error);
+      console.error('Error getting static schedule departures:', error.message);
       return [];
     }
   }
@@ -320,7 +320,7 @@ class FerryService {
         isStatic: true // Flag to indicate this is from static data
       };
     } catch (error) {
-      console.error('Error creating static departure object:', error);
+      console.error('Error creating static departure object:', error.message);
       return null;
     }
   }
@@ -421,7 +421,7 @@ class FerryService {
         delay: stopUpdate.departure.delay || 0
       };
     } catch (error) {
-      console.error('Error creating departure object:', error);
+      console.error('Error creating departure object:', error.message);
       return null;
     }
   }
@@ -474,19 +474,64 @@ class FerryService {
   }
 
   /**
-   * Check if current time is within service hours
+   * Check if current time is within service hours based on actual GTFS data
    * @param {moment} time - Time to check
    * @returns {boolean} True if within service hours
    */
   isWithinServiceHours(time) {
-    const hour = time.hour();
-    const isWeekend = time.day() === 0 || time.day() === 6; // Sunday = 0, Saturday = 6
+    if (!this.staticService || !this.staticService.cache.stopTimes.size) {
+      // Fallback to configured hours if GTFS data not available
+      const hour = time.hour();
+      const isWeekend = time.day() === 0 || time.day() === 6;
+      const serviceHours = isWeekend ? 
+        config.SERVICE_HOURS.weekend : 
+        config.SERVICE_HOURS.weekday;
+      return hour >= serviceHours.start && hour < serviceHours.end;
+    }
+
+    // Use actual GTFS data to determine service hours
+    const dayOfWeek = time.day();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const redHookStopId = '24';
     
-    const serviceHours = isWeekend ? 
-      config.SERVICE_HOURS.weekend : 
-      config.SERVICE_HOURS.weekday;
+    let earliestTime = null;
+    let latestTime = null;
     
-    return hour >= serviceHours.start && hour < serviceHours.end;
+    // Find actual service hours from GTFS data
+    for (const [tripId, trip] of this.staticService.cache.trips) {
+      if (trip.routeId !== config.SOUTH_BROOKLYN_ROUTE_ID) continue;
+      
+      // Apply same service filtering as getStaticScheduleDepartures
+      if (isWeekend) {
+        if (trip.serviceId !== '7') continue;
+      } else {
+        const weekdayServices = ['1', '2', '3', '4', '5', '8', '10', '11', '12'];
+        if (!weekdayServices.includes(trip.serviceId)) continue;
+      }
+      
+      const stopTimes = this.staticService.cache.stopTimes.get(tripId);
+      if (!stopTimes) continue;
+      
+      const redHookStop = stopTimes.find(st => st.stopId === redHookStopId);
+      if (!redHookStop) continue;
+      
+      const [hours, minutes] = redHookStop.departureTime.split(':').map(Number);
+      const timeMinutes = hours * 60 + minutes;
+      
+      if (earliestTime === null || timeMinutes < earliestTime) {
+        earliestTime = timeMinutes;
+      }
+      if (latestTime === null || timeMinutes > latestTime) {
+        latestTime = timeMinutes;
+      }
+    }
+    
+    if (earliestTime === null || latestTime === null) {
+      return false; // No service found
+    }
+    
+    const requestedMinutes = time.hour() * 60 + time.minute();
+    return requestedMinutes >= earliestTime && requestedMinutes <= latestTime;
   }
 
   /**
@@ -561,12 +606,16 @@ class FerryService {
       }
     }
 
-    // Add disclaimer for static schedule data
-    if (departures.some(d => d.isStatic)) {
-      speech += ' This is based on the published schedule as real-time updates are not available for Red Hook departures.';
-    } else if (departures.some(d => d.isFallback)) {
-      speech += ' Please note that this is estimated schedule information as real-time data is currently unavailable.';
+    // Only add information about real-time adjustments if there are actual delays or real-time data
+    const hasRealTimeData = departures.some(d => !d.isStatic && !d.isFallback);
+    const hasDelays = departures.some(d => d.delay && d.delay > 0);
+    
+    if (hasRealTimeData && hasDelays) {
+      speech += ' Times have been adjusted based on real-time ferry tracking.';
+    } else if (hasRealTimeData) {
+      speech += ' Times are based on real-time ferry data.';
     }
+    // Don't mention anything if we're using static schedule data - that's the normal case
 
     return speech;
   }
