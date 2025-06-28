@@ -31,22 +31,18 @@ describe('Utils', () => {
 
   describe('getRelativeTime', () => {
     it('should format relative time correctly', () => {
-      const now = moment();
-      
       const testCases = [
-        { future: now.clone().add(5, 'minutes'), expected: 'in 5 minutes' },
-        { future: now.clone().add(1, 'minute'), expected: 'in 1 minute' },
-        { future: now.clone().add(60, 'minutes'), expected: 'in 1 hour' },
-        { future: now.clone().add(90, 'minutes'), expected: 'in 1 hour and 30 minutes' }
+        { minutes: 5, expected: 'in 5 minutes' },
+        { minutes: 1, expected: 'in 1 minute' },
+        { minutes: 60, expected: 'in 1 hour' },
+        { minutes: 90, expected: 'in 1 hour and 30 minutes' }
       ];
       
-      testCases.forEach(({ future, expected }) => {
-        const result = Utils.getRelativeTime(future.toDate());
-        // Allow for small timing differences (±1 minute)
-        const isExpectedOrClose = result === expected || 
-          result === expected.replace(/\d+/, (match) => String(parseInt(match) - 1)) ||
-          result === expected.replace(/\d+/, (match) => String(parseInt(match) + 1));
-        expect(isExpectedOrClose).toBe(true);
+      testCases.forEach(({ minutes, expected }) => {
+        // Create a fixed future time to avoid timing issues
+        const future = moment().add(minutes, 'minutes').toDate();
+        const result = Utils.getRelativeTime(future);
+        expect(result).toBe(expected);
       });
     });
 

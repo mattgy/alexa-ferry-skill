@@ -206,23 +206,45 @@ class FerryService {
       // Sort by departure time and remove duplicates
       departures.sort((a, b) => a.time - b.time);
       
-      // Remove duplicates - prefer real-time over static for same time slot
+      // Remove duplicates - prefer real-time over static, use tripId as primary key
       const uniqueDepartures = [];
-      const seenTimes = new Map();
+      const seenTrips = new Map(); // Track by tripId first
+      const seenTimes = new Map();  // Track by time as fallback
       
       for (const departure of departures) {
+        const tripId = departure.tripId;
         const timeKey = moment(departure.time).format('HH:mm');
-        const existing = seenTimes.get(timeKey);
         
-        if (!existing) {
-          seenTimes.set(timeKey, departure);
-          uniqueDepartures.push(departure);
-        } else if (!departure.isStatic && existing.isStatic) {
-          // Replace static with real-time for same time
-          const index = uniqueDepartures.indexOf(existing);
-          uniqueDepartures[index] = departure;
-          seenTimes.set(timeKey, departure);
+        // First check if we've seen this exact trip
+        if (tripId && seenTrips.has(tripId)) {
+          const existing = seenTrips.get(tripId);
+          // Replace static with real-time for same trip
+          if (!departure.isStatic && existing.isStatic) {
+            const index = uniqueDepartures.indexOf(existing);
+            uniqueDepartures[index] = departure;
+            seenTrips.set(tripId, departure);
+            seenTimes.set(timeKey, departure);
+          }
+          continue; // Skip this duplicate trip
         }
+        
+        // Then check if we've seen this time slot (for trips without IDs)
+        const existingAtTime = seenTimes.get(timeKey);
+        if (existingAtTime) {
+          // Replace static with real-time for same time
+          if (!departure.isStatic && existingAtTime.isStatic) {
+            const index = uniqueDepartures.indexOf(existingAtTime);
+            uniqueDepartures[index] = departure;
+            seenTimes.set(timeKey, departure);
+            if (tripId) seenTrips.set(tripId, departure);
+          }
+          continue; // Skip this duplicate time
+        }
+        
+        // This is a new departure
+        uniqueDepartures.push(departure);
+        if (tripId) seenTrips.set(tripId, departure);
+        seenTimes.set(timeKey, departure);
       }
       
       return uniqueDepartures.slice(0, config.MAX_DEPARTURES);
