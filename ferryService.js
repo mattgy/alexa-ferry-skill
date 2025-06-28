@@ -131,7 +131,7 @@ class FerryService {
 
   /**
    * Find next departures from Red Hook
-   * @param {Object} feed - GTFS feed
+   * @param {Object} feed - GTFS real-time feed
    * @param {Date} fromTime - Time to search from (default: now)
    * @param {string} direction - 'northbound', 'southbound', or null for both
    * @returns {Array} Array of departure objects
@@ -140,44 +140,88 @@ class FerryService {
     try {
       const searchTime = moment(fromTime).tz(config.TIMEZONE);
       let departures = [];
+      let realTimeUpdates = new Map(); // Map of tripId -> real-time update
 
-      // First try real-time data
+      // First, collect real-time updates
       if (feed && feed.entity) {
-        // Process each entity in the feed
         for (const entity of feed.entity) {
           if (!entity.tripUpdate || !entity.tripUpdate.stopTimeUpdate) {
             continue;
           }
 
-          // Check each stop time update
+          const tripId = entity.tripUpdate.trip.tripId;
+          if (!tripId) continue;
+
+          // Check if this trip has Red Hook updates
           for (const stopUpdate of entity.tripUpdate.stopTimeUpdate) {
             if (this.isRedHookDeparture(stopUpdate, searchTime)) {
-              const departure = this.createDepartureObject(entity, stopUpdate, direction);
-              if (departure) {
-                departures.push(departure);
-              }
+              realTimeUpdates.set(tripId, {
+                entity,
+                stopUpdate,
+                departureTime: moment.unix(stopUpdate.departure.time.low).tz(config.TIMEZONE),
+                delay: stopUpdate.departure.delay || 0
+              });
+              break; // Only need one Red Hook update per trip
             }
           }
         }
       }
 
-      // If no real-time departures found, fall back to static schedule
-      if (departures.length === 0 && this.staticService) {
-        departures = this.getStaticScheduleDepartures(searchTime, direction);
+      // Get static schedule as base
+      const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction);
+      
+      // Merge static schedule with real-time updates
+      for (const staticDep of staticDepartures) {
+        const realTimeUpdate = realTimeUpdates.get(staticDep.tripId);
+        
+        if (realTimeUpdate) {
+          // Use real-time data for this departure
+          const departure = this.createDepartureObject(
+            realTimeUpdate.entity, 
+            realTimeUpdate.stopUpdate, 
+            direction
+          );
+          if (departure) {
+            departures.push(departure);
+          }
+          realTimeUpdates.delete(staticDep.tripId); // Mark as used
+        } else {
+          // Use static schedule data
+          departures.push(staticDep);
+        }
+      }
+      
+      // Add any additional real-time departures not in static schedule
+      for (const [tripId, realTimeUpdate] of realTimeUpdates) {
+        const departure = this.createDepartureObject(
+          realTimeUpdate.entity, 
+          realTimeUpdate.stopUpdate, 
+          direction
+        );
+        if (departure) {
+          departures.push(departure);
+        }
       }
 
-      // Sort by departure time and remove duplicates by time
+      // Sort by departure time and remove duplicates
       departures.sort((a, b) => a.time - b.time);
       
-      // Remove duplicates - keep only one departure per time slot
+      // Remove duplicates - prefer real-time over static for same time slot
       const uniqueDepartures = [];
-      const seenTimes = new Set();
+      const seenTimes = new Map();
       
       for (const departure of departures) {
         const timeKey = moment(departure.time).format('HH:mm');
-        if (!seenTimes.has(timeKey)) {
-          seenTimes.add(timeKey);
+        const existing = seenTimes.get(timeKey);
+        
+        if (!existing) {
+          seenTimes.set(timeKey, departure);
           uniqueDepartures.push(departure);
+        } else if (!departure.isStatic && existing.isStatic) {
+          // Replace static with real-time for same time
+          const index = uniqueDepartures.indexOf(existing);
+          uniqueDepartures[index] = departure;
+          seenTimes.set(timeKey, departure);
         }
       }
       
@@ -223,9 +267,7 @@ class FerryService {
           // On weekends, only use Service 7 which has the correct weekend schedule
           if (trip.serviceId !== '7') continue;
           
-          // TEMPORARY FIX: Only include Direction 0 (to Bay Ridge) for weekends
-          // Direction 1 (to Manhattan) trips appear in GTFS but may not be running
-          if (trip.directionId != 0) continue;
+          // Allow both directions for weekends - remove restrictive direction filter
         } else {
           // On weekdays, use Services 1-5 for regular service and 8,10,11,12 for limited service
           // Exclude Service 7 (weekend) and Services 6,9 (too limited)
@@ -295,15 +337,32 @@ class FerryService {
       let destinations = ['next stops'];
       let directionLabel = 'towards next stops';
       
-      if (route) {
-        if (trip.directionId == 0) {
-          // Southbound
-          destinations = route.southbound.destinations;
-          directionLabel = route.southbound.direction;
-        } else if (trip.directionId == 1) {
-          // Northbound  
-          destinations = route.northbound.destinations;
-          directionLabel = route.northbound.direction;
+      // Get actual destinations from this specific trip's stop sequence
+      const tripStopTimes = this.staticService.cache.stopTimes.get(trip.tripId);
+      if (tripStopTimes) {
+        const redHookStopIndex = tripStopTimes.findIndex(st => st.stopId === this.redHookStop.id);
+        if (redHookStopIndex >= 0) {
+          // Get stops after Red Hook for this specific trip
+          const stopsAfterRedHook = tripStopTimes.slice(redHookStopIndex + 1);
+          destinations = stopsAfterRedHook.map(st => {
+            const stopInfo = this.staticService.cache.stops.get(st.stopId);
+            return stopInfo ? stopInfo.name : st.stopId;
+          }).filter(name => name !== 'Red Hook/Atlantic Basin'); // Remove any duplicate Red Hook references
+        }
+      }
+      
+      // Fallback to route-level destinations if we couldn't get trip-specific ones
+      if (destinations.length === 0 || destinations[0] === 'next stops') {
+        if (route) {
+          if (trip.directionId == 0) {
+            // Southbound
+            destinations = route.southbound.destinations;
+            directionLabel = route.southbound.direction;
+          } else if (trip.directionId == 1) {
+            // Northbound  
+            destinations = route.northbound.destinations;
+            directionLabel = route.northbound.direction;
+          }
         }
       }
 

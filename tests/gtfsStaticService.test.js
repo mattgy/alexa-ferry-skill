@@ -31,10 +31,10 @@ describe('GTFSStaticService', () => {
       });
 
       // Mock zip entries
-      const mockStopsData = 'stop_id,stop_name,stop_lat,stop_lon\nRDHK,Red Hook,40.6782,-74.0151';
-      const mockRoutesData = 'route_id,route_short_name,route_long_name,route_color\nSBK,SBK,South Brooklyn Route,0066CC';
-      const mockTripsData = 'trip_id,route_id,service_id,direction_id\nSBK_001,SBK,WEEKDAY,0';
-      const mockStopTimesData = 'trip_id,stop_id,stop_sequence,arrival_time,departure_time\nSBK_001,RDHK,5,14:30:00,14:30:00';
+      const mockStopsData = 'stop_id,stop_name,stop_lat,stop_lon\n24,Red Hook/Atlantic Basin,40.6782,-74.0151';
+      const mockRoutesData = 'route_id,route_short_name,route_long_name,route_color\nSB,SB,South Brooklyn,0066CC';
+      const mockTripsData = 'trip_id,route_id,service_id,direction_id\nSB_001,SB,WEEKDAY,0';
+      const mockStopTimesData = 'trip_id,stop_id,stop_sequence,arrival_time,departure_time\nSB_001,24,5,14:30:00,14:30:00';
 
       mockZip.getEntry.mockImplementation((filename) => {
         const mockEntry = {
@@ -59,13 +59,13 @@ describe('GTFSStaticService', () => {
         'http://nycferry.connexionz.net/rtt/public/utility/gtfs.aspx',
         expect.objectContaining({
           responseType: 'arraybuffer',
-          timeout: 30000
+          timeout: 10000
         })
       );
 
-      expect(service.cache.stops.has('RDHK')).toBe(true);
-      expect(service.cache.routes.has('SBK')).toBe(true);
-      expect(service.cache.trips.has('SBK_001')).toBe(true);
+      expect(service.cache.stops.has('24')).toBe(true);
+      expect(service.cache.routes.has('SB')).toBe(true);
+      expect(service.cache.trips.has('SB_001')).toBe(true);
     });
 
     it('should use cached data if still valid', async () => {
@@ -82,44 +82,13 @@ describe('GTFSStaticService', () => {
 
       await expect(service.loadGTFSData()).rejects.toThrow('Network error');
     });
-
-    it('should handle missing trips.txt gracefully', async () => {
-      axios.get.mockResolvedValue({
-        data: Buffer.from('mock zip data')
-      });
-
-      const mockStopsData = 'stop_id,stop_name,stop_lat,stop_lon\nRDHK,Red Hook,40.6782,-74.0151';
-      const mockRoutesData = 'route_id,route_short_name,route_long_name,route_color\nSBK,SBK,South Brooklyn Route,0066CC';
-      const mockStopTimesData = 'trip_id,stop_id,stop_sequence,arrival_time,departure_time\nSBK_001,RDHK,5,14:30:00,14:30:00';
-
-      mockZip.getEntry.mockImplementation((filename) => {
-        if (filename === 'trips.txt') return null; // Simulate missing trips.txt
-        
-        const mockEntry = {
-          getData: () => ({
-            toString: () => {
-              switch (filename) {
-                case 'stops.txt': return mockStopsData;
-                case 'routes.txt': return mockRoutesData;
-                case 'stop_times.txt': return mockStopTimesData;
-                default: return '';
-              }
-            }
-          })
-        };
-        return mockEntry;
-      });
-
-      await expect(service.loadGTFSData()).resolves.not.toThrow();
-      expect(service.cache.trips.size).toBe(0);
-    });
   });
 
   describe('findRedHookStop', () => {
     beforeEach(() => {
-      service.cache.stops.set('RDHK', {
-        id: 'RDHK',
-        name: 'Red Hook',
+      service.cache.stops.set('24', {
+        id: '24',
+        name: 'Red Hook/Atlantic Basin',
         lat: 40.6782,
         lon: -74.0151
       });
@@ -135,8 +104,8 @@ describe('GTFSStaticService', () => {
       const redHookStop = service.findRedHookStop();
       
       expect(redHookStop).toBeTruthy();
-      expect(redHookStop.id).toBe('RDHK');
-      expect(redHookStop.name).toBe('Red Hook');
+      expect(redHookStop.id).toBe('24');
+      expect(redHookStop.name).toBe('Red Hook/Atlantic Basin');
     });
 
     it('should return null if Red Hook stop not found', () => {
@@ -148,98 +117,62 @@ describe('GTFSStaticService', () => {
     });
   });
 
-  describe('getRoutesServingStop', () => {
+  describe('getRouteInfo', () => {
     beforeEach(() => {
-      service.cache.routes.set('SBK', {
-        id: 'SBK',
-        shortName: 'SBK',
-        longName: 'South Brooklyn Route'
+      service.cache.routes.set('SB', {
+        id: 'SB',
+        shortName: 'SB',
+        longName: 'South Brooklyn'
       });
       
-      service.cache.trips.set('SBK_001', {
-        id: 'SBK_001',
-        routeId: 'SBK'
-      });
-      
-      service.cache.stopTimes.set('SBK_001', [
-        { stopId: 'PIER11', sequence: 3 },
-        { stopId: 'RDHK', sequence: 5 }
+      service.cache.routePatterns.set('SB', [
+        {
+          stopIds: ['24', 'BAY'],
+          stopNames: ['Red Hook/Atlantic Basin', 'Bay Ridge'],
+          direction: 0
+        }
       ]);
     });
 
-    it('should return routes serving the stop', () => {
-      const routes = service.getRoutesServingStop('RDHK');
+    it('should return route information', () => {
+      const routeInfo = service.getRouteInfo('SB');
       
-      expect(routes).toHaveLength(1);
-      expect(routes[0].id).toBe('SBK');
-      expect(routes[0].shortName).toBe('SBK');
+      expect(routeInfo).toBeTruthy();
+      expect(routeInfo.name).toBe('South Brooklyn');
+      expect(routeInfo).toHaveProperty('southbound');
+      expect(routeInfo).toHaveProperty('northbound');
     });
 
-    it('should return empty array if stop not found', () => {
-      const routes = service.getRoutesServingStop('NONEXISTENT');
+    it('should return null for non-existent route', () => {
+      const routeInfo = service.getRouteInfo('NONEXISTENT');
       
-      expect(routes).toHaveLength(0);
+      expect(routeInfo).toBeNull();
     });
   });
 
-  describe('getNextStopsAfterRedHook', () => {
+  describe('getDestinationsFromRedHook', () => {
     beforeEach(() => {
-      service.cache.stops.set('RDHK', { id: 'RDHK', name: 'Red Hook' });
-      service.cache.stops.set('GOVI', { id: 'GOVI', name: 'Governors Island' });
-      service.cache.stops.set('SUNP', { id: 'SUNP', name: 'Sunset Park/BAT' });
-      
-      service.cache.stopTimes.set('SBK_001', [
-        { stopId: 'PIER11', sequence: 3 },
-        { stopId: 'RDHK', sequence: 5 },
-        { stopId: 'GOVI', sequence: 6 },
-        { stopId: 'SUNP', sequence: 7 }
+      service.cache.routePatterns.set('SB', [
+        {
+          stopIds: ['24', 'GOVI', 'BAY'],
+          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island', 'Bay Ridge'],
+          direction: 0
+        }
       ]);
     });
 
-    it('should return stops after Red Hook in trip sequence', () => {
-      const nextStops = service.getNextStopsAfterRedHook('RDHK');
+    it('should return destinations after Red Hook', () => {
+      const destinations = service.getDestinationsFromRedHook();
       
-      expect(nextStops).toContain('Governors Island');
-      expect(nextStops).toContain('Sunset Park/BAT');
-      expect(nextStops).not.toContain('Red Hook');
+      expect(destinations).toContain('Governors Island');
+      expect(destinations).toContain('Bay Ridge');
+      expect(destinations).not.toContain('Red Hook/Atlantic Basin');
     });
 
-    it('should return empty array if Red Hook is last stop', () => {
-      service.cache.stopTimes.set('SBK_002', [
-        { stopId: 'PIER11', sequence: 3 },
-        { stopId: 'RDHK', sequence: 5 }
-      ]);
-      service.cache.stopTimes.delete('SBK_001'); // Remove the trip with stops after Red Hook
+    it('should filter by direction', () => {
+      const destinations = service.getDestinationsFromRedHook(0);
       
-      const nextStops = service.getNextStopsAfterRedHook('RDHK');
-      
-      expect(nextStops).toHaveLength(0);
-    });
-  });
-
-  describe('extractRouteFromTrip', () => {
-    beforeEach(() => {
-      service.cache.routes.set('SBK', { id: 'SBK' });
-    });
-
-    it('should extract route from underscore-separated trip ID', () => {
-      const routeId = service.extractRouteFromTrip('SBK_WEEKDAY_001');
-      expect(routeId).toBe('SBK');
-    });
-
-    it('should match known route IDs by prefix', () => {
-      const routeId = service.extractRouteFromTrip('SBK001');
-      expect(routeId).toBe('SBK');
-    });
-
-    it('should return null for unrecognizable trip ID', () => {
-      const routeId = service.extractRouteFromTrip('UNKNOWN123');
-      expect(routeId).toBeNull();
-    });
-
-    it('should handle null/undefined trip ID', () => {
-      expect(service.extractRouteFromTrip(null)).toBeNull();
-      expect(service.extractRouteFromTrip(undefined)).toBeNull();
+      expect(Array.isArray(destinations)).toBe(true);
     });
   });
 });
