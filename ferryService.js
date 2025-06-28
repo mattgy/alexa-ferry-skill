@@ -603,9 +603,9 @@ class FerryService {
     if (departures.length === 0) {
       const now = moment().tz(config.TIMEZONE);
       if (!this.isWithinServiceHours(now)) {
-        return "Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.";
+        return 'Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.';
       }
-      return "I couldn't find any upcoming ferries from Red Hook. The service might be suspended or done for the day.";
+      return 'I couldn\'t find any upcoming ferries from Red Hook. The service might be suspended or done for the day.';
     }
 
     let speech = '';

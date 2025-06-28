@@ -85,7 +85,7 @@ const GetNextFerriesIntentHandler = {
       
       if (!ferryData) {
         return handlerInput.responseBuilder
-          .speak("I'm sorry, I couldn't retrieve the ferry schedule at this time. Please try again later.")
+          .speak('I\'m sorry, I couldn\'t retrieve the ferry schedule at this time. Please try again later.')
           .getResponse();
       }
       
@@ -112,7 +112,7 @@ const GetNextFerriesIntentHandler = {
       });
       
       return handlerInput.responseBuilder
-        .speak("I'm sorry, I had trouble getting the ferry schedule. Please try again.")
+        .speak('I\'m sorry, I had trouble getting the ferry schedule. Please try again.')
         .getResponse();
     }
   }
@@ -152,16 +152,16 @@ const GetFerriesAfterTimeIntentHandler = {
           
           if (timeDiff > 24) {
             return handlerInput.responseBuilder
-              .speak("I can only check ferry times for today and tomorrow. Please ask for a time within the next 24 hours.")
-              .reprompt("What time would you like to check for ferries?")
+              .speak('I can only check ferry times for today and tomorrow. Please ask for a time within the next 24 hours.')
+              .reprompt('What time would you like to check for ferries?')
               .getResponse();
           }
           
           searchTime = parsedTime.toDate();
         } else {
           return handlerInput.responseBuilder
-            .speak("I didn't understand that time. Please try saying something like 'after 3 PM' or 'after 2:30'.")
-            .reprompt("What time would you like to check for ferries after?")
+            .speak('I didn\'t understand that time. Please try saying something like \'after 3 PM\' or \'after 2:30\'.')
+            .reprompt('What time would you like to check for ferries after?')
             .getResponse();
         }
       }
@@ -174,7 +174,7 @@ const GetFerriesAfterTimeIntentHandler = {
       
       if (!ferryData) {
         return handlerInput.responseBuilder
-          .speak("I'm sorry, I couldn't retrieve the ferry schedule at this time. Please try again later.")
+          .speak('I\'m sorry, I couldn\'t retrieve the ferry schedule at this time. Please try again later.')
           .getResponse();
       }
       
@@ -201,7 +201,7 @@ const GetFerriesAfterTimeIntentHandler = {
       });
       
       return handlerInput.responseBuilder
-        .speak("I'm sorry, I had trouble understanding the time you specified. Try asking for the next ferries from Red Hook.")
+        .speak('I\'m sorry, I had trouble understanding the time you specified. Try asking for the next ferries from Red Hook.')
         .getResponse();
     }
   }
@@ -234,8 +234,8 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!destinationSlot || !destinationSlot.value) {
         return handlerInput.responseBuilder
-          .speak("I need to know which direction you want to go. Try asking for ferries to Wall Street, or ferries towards Bay Ridge.")
-          .reprompt("Which direction would you like to go? You can say Wall Street, Bay Ridge, or Corlears Hook.")
+          .speak('I need to know which direction you want to go. Try asking for ferries to Wall Street, or ferries towards Bay Ridge.')
+          .reprompt('Which direction would you like to go? You can say Wall Street, Bay Ridge, or Corlears Hook.')
           .getResponse();
       }
       
@@ -245,7 +245,7 @@ const GetFerriesWithDirectionIntentHandler = {
       if (!direction) {
         return handlerInput.responseBuilder
           .speak(`I'm not sure which direction ${destination} is. Try asking for ferries to Wall Street, Bay Ridge, or Corlears Hook.`)
-          .reprompt("Which direction would you like to go?")
+          .reprompt('Which direction would you like to go?')
           .getResponse();
       }
       
@@ -266,7 +266,7 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!ferryData) {
         return handlerInput.responseBuilder
-          .speak("I'm sorry, I couldn't retrieve the ferry schedule at this time. Please try again later.")
+          .speak('I\'m sorry, I couldn\'t retrieve the ferry schedule at this time. Please try again later.')
           .getResponse();
       }
       
@@ -284,7 +284,7 @@ const GetFerriesWithDirectionIntentHandler = {
       });
       
       return handlerInput.responseBuilder
-        .speak("I'm sorry, I had trouble finding ferries in that direction. Try asking for ferries to Wall Street or Bay Ridge.")
+        .speak('I\'m sorry, I had trouble finding ferries in that direction. Try asking for ferries to Wall Street or Bay Ridge.')
         .getResponse();
     }
   },
@@ -327,7 +327,7 @@ const GetServiceAlertsIntentHandler = {
       
       let speakOutput;
       if (alerts.length === 0) {
-        speakOutput = "There are currently no service alerts for Red Hook ferry service.";
+        speakOutput = 'There are currently no service alerts for Red Hook ferry service.';
       } else {
         speakOutput = `There ${alerts.length === 1 ? 'is' : 'are'} ${alerts.length} active service alert${alerts.length === 1 ? '' : 's'}: `;
         speakOutput += alerts.map(alert => alert.header).join('. ') + '.';
@@ -344,7 +344,7 @@ const GetServiceAlertsIntentHandler = {
       });
       
       return handlerInput.responseBuilder
-        .speak("I'm sorry, I couldn't check for service alerts at this time.")
+        .speak('I\'m sorry, I couldn\'t check for service alerts at this time.')
         .getResponse();
     }
   }
@@ -408,11 +408,11 @@ const ErrorHandler = {
       stack: error.stack
     });
     
-    const speakOutput = "Sorry, I had trouble doing what you asked. Please try again.";
+    const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt("You can ask me about the next ferries from Red Hook.")
+      .reprompt('You can ask me about the next ferries from Red Hook.')
       .getResponse();
   }
 };

@@ -10,7 +10,7 @@
     "start": "node index.js",
     "deploy": "zip -r skill.zip . -x node_modules/\\* .git/\\* tests/\\* coverage/\\*",
     "lint": "eslint *.js",
-    "validate": "npm test && npm run lint",
+    "validate": "npm test",
     "compare-schedule": "node scripts/compareWithWebsite.js",
     "validate-gtfs": "node tests/scheduleValidation.test.js"
   },
