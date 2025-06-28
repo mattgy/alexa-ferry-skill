@@ -21,11 +21,11 @@ class GTFSStaticService {
         // Check if cache is still valid
         if (this.cache.lastUpdated && 
             (Date.now() - this.cache.lastUpdated) < this.cacheExpiry) {
-            console.log('Using cached GTFS data');
+            // Using cached GTFS data
             return;
         }
 
-        console.log('Fetching GTFS static data...');
+        // Fetching fresh GTFS static data
         
         try {
             const response = await axios.get(config.GTFS_STATIC_URL, {
@@ -45,10 +45,10 @@ class GTFSStaticService {
             this.analyzeRoutePatterns();
             
             this.cache.lastUpdated = Date.now();
-            console.log('GTFS static data loaded successfully');
+            // GTFS static data loaded successfully
             
         } catch (error) {
-            console.error('Error loading GTFS static data:', error);
+            console.error('Error loading GTFS static data:', error.message);
             throw error;
         }
     }
@@ -80,7 +80,7 @@ class GTFSStaticService {
                     stops.forEach(stop => {
                         this.cache.stops.set(stop.id, stop);
                     });
-                    console.log(`Loaded ${stops.length} stops`);
+                    // Loaded stops data
                     resolve();
                 })
                 .on('error', reject);
@@ -114,7 +114,7 @@ class GTFSStaticService {
                     routes.forEach(route => {
                         this.cache.routes.set(route.id, route);
                     });
-                    console.log(`Loaded ${routes.length} routes`);
+                    // Loaded routes data
                     resolve();
                 })
                 .on('error', reject);
@@ -151,7 +151,7 @@ class GTFSStaticService {
                     trips.forEach(trip => {
                         this.cache.trips.set(trip.tripId, trip);
                     });
-                    console.log(`Loaded ${trips.length} trips`);
+                    // Loaded trips data
                     resolve();
                 })
                 .on('error', reject);
@@ -194,7 +194,7 @@ class GTFSStaticService {
                     
                     const totalStopTimes = Array.from(this.cache.stopTimes.values())
                         .reduce((sum, times) => sum + times.length, 0);
-                    console.log(`Loaded stop times for ${this.cache.stopTimes.size} trips`);
+                    // Loaded stop times data
                     resolve();
                 })
                 .on('error', reject);
@@ -202,7 +202,7 @@ class GTFSStaticService {
     }
 
     analyzeRoutePatterns() {
-        console.log('Analyzing route patterns...');
+        // Analyzing route patterns for South Brooklyn route
         
         // Focus on South Brooklyn route
         const sbTrips = Array.from(this.cache.trips.values())
@@ -237,10 +237,7 @@ class GTFSStaticService {
         // Store patterns for South Brooklyn route
         this.cache.routePatterns.set('SB', Array.from(patterns.values()));
         
-        console.log(`Found ${patterns.size} different patterns for South Brooklyn route`);
-        patterns.forEach((pattern, signature) => {
-            console.log(`  Pattern: ${pattern.stopNames.join(' → ')} (${pattern.tripCount} trips)`);
-        });
+        // Route pattern analysis complete - found patterns for South Brooklyn route
     }
 
     findRedHookStop() {
