@@ -63,8 +63,8 @@ class Utils {
    * @param {Date} futureTime - Future time
    * @returns {string} Relative time description
    */
-  static getRelativeTime(futureTime) {
-    const now = moment().tz(config.TIMEZONE);
+  static getRelativeTime(futureTime, nowTime = null) {
+    const now = nowTime ? moment(nowTime).tz(config.TIMEZONE) : moment().tz(config.TIMEZONE);
     const future = moment(futureTime).tz(config.TIMEZONE);
     const diffMinutes = future.diff(now, 'minutes');
     

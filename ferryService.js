@@ -480,7 +480,15 @@ class FerryService {
     if (departures.length === 0) {
       const now = moment().tz(config.TIMEZONE);
       if (!this.isWithinServiceHours(now)) {
-        return 'Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.';
+        const tomorrow = now.clone().add(1, 'day').startOf('day');
+        const nextDayDepartures = this.getStaticScheduleDepartures(tomorrow);
+        
+        if (nextDayDepartures.length > 0) {
+          const firstDepartureTime = moment(nextDayDepartures[0].time).format('h:mm A');
+          return `Ferry service from Red Hook is currently not operating. Service resumes tomorrow at ${firstDepartureTime}. Would you like to hear more about tomorrow's schedule?`;
+        } else {
+          return 'Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.';
+        }
       }
       return 'I couldn\'t find any upcoming ferries from Red Hook. The service might be suspended or done for the day.';
     }

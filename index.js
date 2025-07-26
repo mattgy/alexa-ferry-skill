@@ -101,6 +101,18 @@ const GetNextFerriesIntentHandler = {
       
       const speakOutput = ferryService.formatDeparturesForSpeech(allDepartures, alerts);
       
+      // If the user was asked about the next day's schedule, set a session attribute
+      if (speakOutput.includes('Would you like to hear more about tomorrow\'s schedule?')) {
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.promptedForNextDay = true;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+        
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .reprompt('Would you like to hear more about tomorrow\'s schedule?')
+          .getResponse();
+      }
+      
       return handlerInput.responseBuilder
         .speak(speakOutput)
         .getResponse();
@@ -118,8 +130,50 @@ const GetNextFerriesIntentHandler = {
   }
 };
 
+const GetNextDayFerriesIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
+  },
+  async handle(handlerInput) {
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    
+    if (sessionAttributes.promptedForNextDay) {
+      try {
+        await ensureServiceInitialized();
+        
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const departures = ferryService.getStaticScheduleDepartures(tomorrow);
+        
+        const speakOutput = ferryService.formatDeparturesForSpeech(departures);
+        
+        // Clear the session attribute
+        sessionAttributes.promptedForNextDay = false;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+        
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .getResponse();
+          
+      } catch (error) {
+        Utils.log('error', 'Error in GetNextDayFerriesIntent', { error: error.message });
+        return handlerInput.responseBuilder
+          .speak('I\'m sorry, I had trouble getting tomorrow\'s schedule. Please try again.')
+          .getResponse();
+      }
+    }
+    
+    // If not prompted for next day, fall back to a generic response
+    return handlerInput.responseBuilder
+      .speak("I'm not sure what you're saying yes to. You can ask me about the next ferries from Red Hook.")
+      .reprompt('What would you like to know?')
+      .getResponse();
+  }
+};
+
 const GetFerriesAfterTimeIntentHandler = {
   canHandle(handlerInput) {
+
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetFerriesAfterTimeIntent';
   },
@@ -437,6 +491,7 @@ exports.handler = Alexa.SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
     GetNextFerriesIntentHandler,
+    GetNextDayFerriesIntentHandler,
     GetFerriesWithDirectionIntentHandler,
     GetFerriesAfterTimeIntentHandler,
     GetServiceAlertsIntentHandler,

@@ -40,8 +40,9 @@ describe('Utils', () => {
       
       testCases.forEach(({ minutes, expected }) => {
         // Create a fixed future time to avoid timing issues
-        const future = moment().add(minutes, 'minutes').toDate();
-        const result = Utils.getRelativeTime(future);
+        const now = moment();
+        const future = now.clone().add(minutes, 'minutes').toDate();
+        const result = Utils.getRelativeTime(future, now.toDate());
         expect(result).toBe(expected);
       });
     });
