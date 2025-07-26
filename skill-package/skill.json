@@ -1,0 +1,55 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "summary": "Check ferry schedules from Red Hook Brooklyn with real-time updates and service alerts",
+          "examplePhrases": [
+            "Alexa, ask red hook ferry when is the next ferry",
+            "Alexa, ask red hook ferry for ferries to Wall Street",
+            "Alexa, ask red hook ferry are there any service alerts"
+          ],
+          "keywords": [
+            "ferry",
+            "nyc",
+            "red hook",
+            "brooklyn",
+            "transportation",
+            "schedule",
+            "realtime"
+          ],
+          "name": "Red Hook Ferry Checker",
+          "description": "Get real-time ferry schedules and service alerts for NYC Ferry's Red Hook route. Check departure times to Manhattan (Wall Street/Pier 11) and Bay Ridge, with live updates and service disruption notifications."
+        }
+      },
+      "isAvailableWorldwide": false,
+      "testingInstructions": "This skill provides real-time NYC Ferry schedules for the Red Hook route in Brooklyn. Test with phrases like 'when is the next ferry', 'ferries to Wall Street', or 'are there any service alerts'.",
+      "category": "TRAVEL_AND_TRANSPORTATION",
+      "distributionCountries": [
+        "US"
+      ]
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:redHookFerrySkill"
+        },
+        "interfaces": []
+      }
+    },
+    "manifestVersion": "1.0",
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "en-US": {
+          "privacyPolicyUrl": "",
+          "termsOfUseUrl": ""
+        }
+      }
+    }
+  }
+}
