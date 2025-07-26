@@ -79,12 +79,18 @@ cp .env.example .env
 # Edit .env with your specific configuration
 ```
 
-### 3. Run Tests
+### 3. Setup Alexa Skill Configuration
+```bash
+cp skill.json.template skill.json
+# Edit skill.json and replace ACCOUNT_ID, REGION, and FUNCTION_NAME with your AWS Lambda details
+```
+
+### 4. Run Tests
 ```bash
 npm test
 ```
 
-### 4. Deploy
+### 5. Deploy
 ```bash
 # Automated deployment (requires AWS CLI configured)
 ./deploy.sh
@@ -254,6 +260,21 @@ For issues and questions:
 2. Review CloudWatch logs for detailed errors
 3. Verify GTFS endpoint status
 4. Check Alexa Developer Console for skill configuration issues
+
+## 🔐 Security Notes
+
+### Files Not in Repository
+The following files are excluded from the public repository for security reasons:
+- `skill.json` - Contains AWS Lambda ARN with account ID (use `skill.json.template` instead)
+- `.env` - Contains environment variables and secrets (use `.env.example` as template)
+- `*.zip` - Deployment packages that may contain sensitive configuration
+- `localTest.js` - Local testing scripts that may contain test data
+
+### Setup for Development
+1. Copy template files: `cp skill.json.template skill.json` and `cp .env.example .env`
+2. Fill in your AWS account details in `skill.json`
+3. Configure environment variables in `.env`
+4. Never commit these files to the repository
 
 ## 🔄 Version History
 

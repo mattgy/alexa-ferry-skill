@@ -44,3 +44,13 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# Deployment files (may contain sensitive info)
+*.zip
+nycferry.zip
+
+# Local test files
+localTest.js
+
+# Alexa skill configuration (contains AWS ARN)
+skill.json

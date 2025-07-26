@@ -209,7 +209,7 @@ class FerryService {
         seenTimes.set(timeKey, departure);
       }
       
-      return uniqueDepartures.slice(0, config.MAX_DEPARTURES);
+      return uniqueDepartures.slice(0, Math.max(config.MAX_DEPARTURES, 5));
       
     } catch (error) {
       console.error('Error parsing ferry data:', error.message);
@@ -222,51 +222,84 @@ class FerryService {
     const redHookStopId = '24';
     
     try {
-      for (const [tripId, trip] of this.staticService.cache.trips) {
-        if (trip.routeId !== config.SOUTH_BROOKLYN_ROUTE_ID) {
-          continue;
-        }
-
-        if (!this.staticService.isServiceActive(trip.serviceId, searchTime)) {
-          continue;
-        }
-        
-        if (direction) {
-          if (direction === 'northbound' && trip.directionId != 1) continue;
-          if (direction === 'southbound' && trip.directionId != 0) continue;
-        }
-        
-        const stopTimes = this.staticService.cache.stopTimes.get(tripId);
-        if (!stopTimes) continue;
-        
-        const redHookStop = stopTimes.find(st => st.stopId === redHookStopId);
-        if (!redHookStop) continue;
-        
-        const [hours, minutes, seconds] = redHookStop.departureTime.split(':').map(Number);
-        const departureTime = searchTime.clone().hour(hours).minute(minutes).second(seconds);
-        
-        // Handle overnight schedules by advancing the day if departure time is in the past
-        if (departureTime.isBefore(searchTime)) {
-          continue;
-        }
-        
-        // Ensure we are only looking at the next 24 hours
-        if (departureTime.diff(searchTime, 'hours') > 24) {
-          continue;
-        }
-        
-        const departure = this.createStaticDepartureObject(trip, departureTime, redHookStop);
-        if (departure) {
-          departures.push(departure);
+      // Try to get departures for the current day first
+      const todayDepartures = this._getStaticDeparturesForDay(searchTime, direction, redHookStopId);
+      departures.push(...todayDepartures);
+      
+      // If no departures found for today and we're looking after service hours,
+      // also check tomorrow
+      if (departures.length === 0 || !this.isWithinServiceHours(searchTime)) {
+        const tomorrow = searchTime.clone().add(1, 'day').startOf('day');
+        const tomorrowDepartures = this._getStaticDeparturesForDay(tomorrow, direction, redHookStopId);
+        departures.push(...tomorrowDepartures);
+      }
+      
+      // Sort by time and deduplicate by time before limiting
+      departures.sort((a, b) => a.time - b.time);
+      
+      // Deduplicate by time to avoid multiple trips at same time taking up all slots
+      const uniqueTimesDepartures = [];
+      const seenTimes = new Set();
+      
+      for (const departure of departures) {
+        const timeKey = departure.timeFormatted;
+        if (!seenTimes.has(timeKey)) {
+          seenTimes.add(timeKey);
+          uniqueTimesDepartures.push(departure);
         }
       }
       
-      return departures;
+      return uniqueTimesDepartures.slice(0, 15); // Allow reasonable number of unique time slots
       
     } catch (error) {
       console.error('Error getting static schedule departures:', error.message);
       return [];
     }
+  }
+
+  _getStaticDeparturesForDay(searchTime, direction, redHookStopId) {
+    const departures = [];
+    
+    for (const [tripId, trip] of this.staticService.cache.trips) {
+      if (trip.routeId !== config.SOUTH_BROOKLYN_ROUTE_ID) {
+        continue;
+      }
+
+      if (!this.staticService.isServiceActive(trip.serviceId, searchTime)) {
+        continue;
+      }
+      
+      if (direction) {
+        if (direction === 'northbound' && trip.directionId != 1) continue;
+        if (direction === 'southbound' && trip.directionId != 0) continue;
+      }
+      
+      const stopTimes = this.staticService.cache.stopTimes.get(tripId);
+      if (!stopTimes) continue;
+      
+      const redHookStop = stopTimes.find(st => st.stopId === redHookStopId);
+      if (!redHookStop) continue;
+      
+      const [hours, minutes, seconds] = redHookStop.departureTime.split(':').map(Number);
+      const departureTime = searchTime.clone().hour(hours).minute(minutes).second(seconds);
+      
+      // For current day, skip if departure already passed
+      if (departureTime.isBefore(moment().tz(config.TIMEZONE))) {
+        continue;
+      }
+      
+      // Ensure we are only looking at reasonable timeframe
+      if (departureTime.diff(moment().tz(config.TIMEZONE), 'hours') > 48) {
+        continue;
+      }
+      
+      const departure = this.createStaticDepartureObject(trip, departureTime, redHookStop);
+      if (departure) {
+        departures.push(departure);
+      }
+    }
+    
+    return departures;
   }
 
   createStaticDepartureObject(trip, departureTime, stopTime) {
