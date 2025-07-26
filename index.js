@@ -127,6 +127,7 @@ const GetNextFerriesIntentHandler = {
       }
       
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         return handlerInput.responseBuilder
           .speak(speakOutput)
           .reprompt('Would you like to hear about current service alerts for this route?')
@@ -295,6 +296,7 @@ const GetFerriesAfterTimeIntentHandler = {
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         return handlerInput.responseBuilder
           .speak(speakOutput)
           .reprompt('Would you like to hear about current service alerts for this route?')
@@ -389,6 +391,7 @@ const GetFerriesWithDirectionIntentHandler = {
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         return handlerInput.responseBuilder
           .speak(speakOutput)
           .reprompt('Would you like to hear about current service alerts for this route?')
