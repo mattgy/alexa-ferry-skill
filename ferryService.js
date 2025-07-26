@@ -248,7 +248,7 @@ class FerryService {
         
         // Handle overnight schedules by advancing the day if departure time is in the past
         if (departureTime.isBefore(searchTime)) {
-          departureTime.add(1, 'day');
+          continue;
         }
         
         // Ensure we are only looking at the next 24 hours

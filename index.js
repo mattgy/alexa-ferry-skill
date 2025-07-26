@@ -72,6 +72,7 @@ const GetNextFerriesIntentHandler = {
   async handle(handlerInput) {
     const requestId = handlerInput.requestEnvelope.request.requestId;
     Utils.log('info', 'GetNextFerriesIntent received', { requestId });
+    Utils.log('info', 'LAMBDA UPDATED');
     
     try {
       // Ensure ferry service is initialized with static GTFS data
