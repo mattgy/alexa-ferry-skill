@@ -239,15 +239,13 @@ class FerryService {
         const [hours, minutes, seconds] = redHookStop.departureTime.split(':').map(Number);
         const departureTime = searchTime.clone().hour(hours).minute(minutes).second(seconds);
         
+        // Handle overnight schedules by advancing the day if departure time is in the past
         if (departureTime.isBefore(searchTime)) {
-          if (hours < 6) {
-            departureTime.add(1, 'day');
-          } else {
-            continue;
-          }
+          departureTime.add(1, 'day');
         }
         
-        if (departureTime.diff(searchTime, 'hours') > 12) {
+        // Ensure we are only looking at the next 24 hours
+        if (departureTime.diff(searchTime, 'hours') > 24) {
           continue;
         }
         
