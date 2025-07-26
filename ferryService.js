@@ -97,7 +97,7 @@ class FerryService {
 
   alertAffectsRedHook(alert) {
     if (!alert.informedEntity || alert.informedEntity.length === 0) {
-      return true; // Assume system-wide if no specific entity
+      return false; // No specific entity, so not relevant to Red Hook
     }
     
     const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
@@ -137,8 +137,7 @@ class FerryService {
         }
       }
 
-      const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction)
-        .filter(dep => moment(dep.time).isAfter(searchTime));
+      const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction);
       
       for (const staticDep of staticDepartures) {
         const realTimeUpdate = realTimeUpdates.get(staticDep.tripId);
