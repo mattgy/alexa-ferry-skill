@@ -61,6 +61,8 @@ GEMINI.md
 test-interaction-model.js
 test-local-interactions.js
 test-dialog.json
+test-live-skill.sh
+test-utterance-skill.sh
 eslint.config.mjs
 jest.config.js
 localTest.js

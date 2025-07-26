@@ -7,6 +7,7 @@ This enhanced Alexa skill provides comprehensive information about ferry departu
 ### Enhanced Functionality
 - **Dynamic GTFS data loading** - Automatically discovers routes and stops from NYC Ferry's static GTFS feed
 - **Real-time service alerts** - Get notified about delays and disruptions
+- **Interactive service alerts** - Say "yes" when prompted to hear current alerts
 - **Time-specific queries** - Ask for ferries after a specific time
 - **Improved error handling** - Better fallback responses and error recovery
 - **Timezone awareness** - Proper Eastern Time handling
@@ -14,11 +15,18 @@ This enhanced Alexa skill provides comprehensive information about ferry departu
 - **Delay information** - Shows if ferries are running late
 
 ### Better User Experience
+- **Interactive prompts** - Skill asks if you'd like to hear service alerts and responds properly to yes/no
 - **More natural responses** - Includes destination information and relative timing
 - **Comprehensive help** - Better guidance on what you can ask
 - **Structured logging** - Better debugging and monitoring
 - **Fallback data** - Provides estimated times when real-time data is unavailable
 - **Automatic route discovery** - No more hardcoded route information
+
+### Recent Bug Fixes ✅
+- **Fixed "yes" response bug** - Now correctly shows service alerts instead of repeating ferry schedule
+- **Fixed session management** - Proper handling of alertsOffered and alertsMentioned flags
+- **Fixed service alert filtering** - Correctly filters alerts for Red Hook route using informedEntity
+- **Fixed intent handler separation** - YesIntent and GetNextDayFerriesIntent now properly separated
 
 ## 🗣️ Usage Examples
 
@@ -36,6 +44,13 @@ This enhanced Alexa skill provides comprehensive information about ferry departu
 - "Alexa, ask Red Hook Ferry are there any service alerts"
 - "Alexa, ask Red Hook Ferry check for delays"
 - "Alexa, ask Red Hook Ferry about service disruptions"
+
+### Interactive Features
+After asking for ferry times, the skill will prompt:
+- **"Would you like to hear about current service alerts for this route?"**
+- Respond with **"Yes"** to hear service alerts
+- Respond with **"No"** to end the conversation
+- This interactive feature was recently fixed to work properly!
 
 ## 🛠️ Technical Improvements
 
