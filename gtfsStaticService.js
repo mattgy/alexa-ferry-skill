@@ -3,6 +3,7 @@ const AdmZip = require('adm-zip');
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 const config = require('./config');
+const moment = require('moment-timezone');
 
 class GTFSStaticService {
     constructor() {
@@ -11,6 +12,8 @@ class GTFSStaticService {
             routes: new Map(),
             trips: new Map(),
             stopTimes: new Map(),
+            calendar: new Map(),
+            calendarDates: new Map(),
             routePatterns: new Map(), // New: store different route patterns
             lastUpdated: null
         };
@@ -40,7 +43,9 @@ class GTFSStaticService {
             await this.parseRoutes(zip);
             await this.parseTrips(zip);
             await this.parseStopTimes(zip);
-            
+            await this.parseCalendar(zip);
+            await this.parseCalendarDates(zip);
+
             // Analyze route patterns after loading all data
             this.analyzeRoutePatterns();
             
@@ -199,6 +204,105 @@ class GTFSStaticService {
                 })
                 .on('error', reject);
         });
+    }
+
+    async parseCalendar(zip) {
+        const calendarEntry = zip.getEntry('calendar.txt');
+        if (!calendarEntry) {
+            // File might be optional, so just resolve
+            return Promise.resolve();
+        }
+        
+        let calendarData = calendarEntry.getData().toString('utf8');
+        
+        // Remove UTF-8 BOM if present
+        if (calendarData.charCodeAt(0) === 0xFEFF) {
+            calendarData = calendarData.slice(1);
+        }
+        
+        return new Promise((resolve, reject) => {
+            Readable.from([calendarData])
+                .pipe(csv())
+                .on('data', (row) => {
+                    this.cache.calendar.set(row.service_id, {
+                        serviceId: row.service_id,
+                        monday: row.monday === '1',
+                        tuesday: row.tuesday === '1',
+                        wednesday: row.wednesday === '1',
+                        thursday: row.thursday === '1',
+                        friday: row.friday === '1',
+                        saturday: row.saturday === '1',
+                        sunday: row.sunday === '1',
+                        startDate: row.start_date,
+                        endDate: row.end_date,
+                    });
+                })
+                .on('end', () => {
+                    resolve();
+                })
+                .on('error', reject);
+        });
+    }
+
+    async parseCalendarDates(zip) {
+        const calendarDatesEntry = zip.getEntry('calendar_dates.txt');
+        if (!calendarDatesEntry) {
+            // File might be optional
+            return Promise.resolve();
+        }
+        
+        let calendarDatesData = calendarDatesEntry.getData().toString('utf8');
+        
+        // Remove UTF-8 BOM if present
+        if (calendarDatesData.charCodeAt(0) === 0xFEFF) {
+            calendarDatesData = calendarDatesData.slice(1);
+        }
+        
+        return new Promise((resolve, reject) => {
+            Readable.from([calendarDatesData])
+                .pipe(csv())
+                .on('data', (row) => {
+                    const serviceId = row.service_id;
+                    if (!this.cache.calendarDates.has(serviceId)) {
+                        this.cache.calendarDates.set(serviceId, []);
+                    }
+                    this.cache.calendarDates.get(serviceId).push({
+                        date: row.date,
+                        exceptionType: row.exception_type,
+                    });
+                })
+                .on('end', () => {
+                    resolve();
+                })
+                .on('error', reject);
+        });
+    }
+
+    isServiceActive(serviceId, searchDate) {
+        const searchMoment = moment(searchDate).tz(config.TIMEZONE).startOf('day');
+        const dayOfWeek = searchMoment.format('dddd').toLowerCase();
+
+        const calendar = this.cache.calendar.get(serviceId);
+        const calendarExceptions = this.cache.calendarDates.get(serviceId) || [];
+
+        // Check for specific date exceptions
+        for (const exception of calendarExceptions) {
+            const exceptionDate = moment.tz(exception.date, 'YYYYMMDD', config.TIMEZONE).startOf('day');
+            if (exceptionDate.isSame(searchMoment)) {
+                return exception.exceptionType === '1'; // 1 = service added
+            }
+        }
+
+        if (calendar) {
+            const startDate = moment.tz(calendar.startDate, 'YYYYMMDD', config.TIMEZONE).startOf('day');
+            const endDate = moment.tz(calendar.endDate, 'YYYYMMDD', config.TIMEZONE).startOf('day');
+
+            if (searchMoment.isBetween(startDate, endDate, null, '[]') && calendar[dayOfWeek]) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     analyzeRoutePatterns() {
