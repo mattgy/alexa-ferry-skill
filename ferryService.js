@@ -63,6 +63,8 @@ class FerryService {
         new Uint8Array(response.data)
       );
       
+      console.log('Raw alerts feed:', JSON.stringify(feed, null, 2));
+      
       return this.parseAlerts(feed);
     } catch (error) {
       console.error('Error fetching alerts:', error.message);
@@ -137,7 +139,10 @@ class FerryService {
         }
       }
 
+      console.log('Real-time updates:', JSON.stringify(Array.from(realTimeUpdates.entries()), null, 2));
+
       const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction);
+      console.log('Static departures:', JSON.stringify(staticDepartures, null, 2));
       
       for (const staticDep of staticDepartures) {
         const realTimeUpdate = realTimeUpdates.get(staticDep.tripId);
