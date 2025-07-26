@@ -136,7 +136,7 @@ describe('FerryService', () => {
       
       const alerts = [
         {
-          header: 'Delays expected due to weather'
+          description: 'Delays expected due to weather'
         }
       ];
       
