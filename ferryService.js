@@ -110,7 +110,7 @@ class FerryService {
     );
   }
 
-  getNextRedHookDepartures(feed, fromTime = new Date(), direction = null) {
+  getNextRedHookDepartures(feed, fromTime, direction = null) {
     try {
       const searchTime = moment(fromTime).tz(config.TIMEZONE);
       let departures = [];

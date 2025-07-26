@@ -95,9 +95,18 @@ const GetNextFerriesIntentHandler = {
       const southboundDepartures = ferryService.getNextRedHookDepartures(ferryData, now, 'southbound');
       
       // Combine and sort all departures by time
-      const allDepartures = [...northboundDepartures, ...southboundDepartures]
+      let allDepartures = [...northboundDepartures, ...southboundDepartures]
         .sort((a, b) => a.time - b.time)
         .slice(0, 6); // Show up to 6 total departures
+
+      if (allDepartures.length === 0) {
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const nextDayNorthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'northbound');
+        const nextDaySouthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'southbound');
+        allDepartures = [...nextDayNorthbound, ...nextDaySouthbound]
+          .sort((a, b) => a.time - b.time)
+          .slice(0, 6);
+      }
       
       const speakOutput = ferryService.formatDeparturesForSpeech(allDepartures, alerts);
       
