@@ -43,8 +43,7 @@ describe('Schedule Validation', () => {
       
       // Should find at least some departures (unless outside service hours)
       const now = moment().tz('America/New_York');
-      const hour = now.hour();
-      const isServiceHours = hour >= 6 && hour <= 22;
+      const isServiceHours = ferryService.isWithinServiceHours(now);
       
       if (isServiceHours) {
         expect(departures.length).toBeGreaterThan(0);

@@ -279,7 +279,7 @@ class GTFSStaticService {
     }
 
     isServiceActive(serviceId, searchDate) {
-        const searchMoment = moment(searchDate).tz(config.TIMEZONE).startOf('day');
+        const searchMoment = moment.tz(searchDate, 'America/New_York').startOf('day');
         const dayOfWeek = searchMoment.format('dddd').toLowerCase();
 
         const calendar = this.cache.calendar.get(serviceId);
@@ -287,15 +287,15 @@ class GTFSStaticService {
 
         // Check for specific date exceptions
         for (const exception of calendarExceptions) {
-            const exceptionDate = moment.tz(exception.date, 'YYYYMMDD', config.TIMEZONE).startOf('day');
+            const exceptionDate = moment.tz(exception.date, 'YYYYMMDD', 'America/New_York').startOf('day');
             if (exceptionDate.isSame(searchMoment)) {
                 return exception.exceptionType === '1'; // 1 = service added
             }
         }
 
         if (calendar) {
-            const startDate = moment.tz(calendar.startDate, 'YYYYMMDD', config.TIMEZONE).startOf('day');
-            const endDate = moment.tz(calendar.endDate, 'YYYYMMDD', config.TIMEZONE).startOf('day');
+            const startDate = moment.tz(calendar.startDate, 'YYYYMMDD', 'America/New_York').startOf('day');
+            const endDate = moment.tz(calendar.endDate, 'YYYYMMDD', 'America/New_York').startOf('day');
 
             if (searchMoment.isBetween(startDate, endDate, null, '[]') && calendar[dayOfWeek]) {
                 return true;
