@@ -99,14 +99,13 @@ class FerryService {
 
   alertAffectsRedHook(alert) {
     if (!alert.informedEntity || alert.informedEntity.length === 0) {
-      return false; // No specific entity, so not relevant to Red Hook
+      return false;
     }
     
     const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
     
     return alert.informedEntity.some(entity => 
-      entity.stopId === redHookStopId ||
-      (entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID && !entity.stopId)
+      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID
     );
   }
 
@@ -501,7 +500,7 @@ class FerryService {
     let speech = '';
     
     if (alerts.length > 0) {
-      const alertText = alerts.map(alert => alert.header).join('. ');
+      const alertText = alerts.map(alert => alert.description).join('. ');
       speech += `Service alert: ${alertText}. `;
     }
 
