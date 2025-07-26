@@ -24,7 +24,7 @@
       },
       "isAvailableWorldwide": false,
       "testingInstructions": "This skill provides real-time NYC Ferry schedules for the Red Hook route in Brooklyn. Test with phrases like 'when is the next ferry', 'ferries to Wall Street', or 'are there any service alerts'.",
-      "category": "TRAVEL_AND_TRANSPORTATION",
+      "category": "PUBLIC_TRANSPORTATION",
       "distributionCountries": [
         "US"
       ]
