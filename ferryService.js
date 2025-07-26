@@ -170,7 +170,8 @@ class FerryService {
           id: entity.id,
           header: entity.alert.headerText.translation?.[0]?.text || 'Service Alert',
           description: entity.alert.descriptionText?.translation?.[0]?.text || '',
-          severity: entity.alert.severityLevel || 'UNKNOWN'
+          severity: entity.alert.severityLevel || 'UNKNOWN',
+          informedEntity: entity.alert.informedEntity || []
         };
         
         if (this.alertAffectsRedHook(entity.alert)) {
