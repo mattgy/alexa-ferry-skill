@@ -304,6 +304,11 @@ class GTFSStaticService {
             }
         }
 
+        // If no calendar entry, check for day-of-week service
+        if (calendar && calendar[dayOfWeek]) {
+            return true;
+        }
+
         return false;
     }
 
