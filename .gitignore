@@ -54,3 +54,28 @@ localTest.js
 
 # Alexa skill configuration (contains AWS ARN)
 skill.json
+
+# Documentation and automation guides (not needed in deployment)
+ALEXA_CLI_AUTOMATION.md
+CLAUDE.md
+GEMINI.md
+
+# Test and development files
+test-interaction-model.js
+eslint.config.mjs
+jest.config.js
+localTest.js
+
+# Scripts directory (development tools)
+scripts/
+
+# ASK CLI sensitive files
+.ask/ask-states.json
+
+# Old/duplicate files
+skill.json
+skill.json.template
+models/
+
+# Infrastructure directory (ASK CLI generated)
+infrastructure/

@@ -136,7 +136,8 @@ describe('FerryService', () => {
       
       const alerts = [
         {
-          description: 'Delays expected due to weather'
+          description: 'Delays expected due to weather',
+          informedEntity: [{ routeId: 'SB' }]
         }
       ];
       
