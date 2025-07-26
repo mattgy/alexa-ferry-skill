@@ -297,8 +297,10 @@ class GTFSStaticService {
             const startDate = moment.tz(calendar.startDate, 'YYYYMMDD', 'America/New_York').startOf('day');
             const endDate = moment.tz(calendar.endDate, 'YYYYMMDD', 'America/New_York').startOf('day');
 
-            if (searchMoment.isBetween(startDate, endDate, null, '[]') && calendar[dayOfWeek]) {
-                return true;
+            if (searchMoment.isBetween(startDate, endDate, null, '[]')) {
+                if (calendar[dayOfWeek]) {
+                    return true;
+                }
             }
         }
 
