@@ -154,11 +154,11 @@ const GetNextFerriesIntentHandler = {
   }
 };
 
-const GetNextDayFerriesIntentHandler = {
+const YesIntentHandler = {
   canHandle(handlerInput) {
     const result = Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
-    if (result) Utils.log('info', 'GetNextDayFerriesIntentHandler.canHandle = true for AMAZON.YesIntent');
+    if (result) Utils.log('info', 'YesIntentHandler.canHandle = true for AMAZON.YesIntent');
     return result;
   },
   async handle(handlerInput) {
@@ -189,7 +189,7 @@ const GetNextDayFerriesIntentHandler = {
           .getResponse();
           
       } catch (error) {
-        Utils.log('error', 'Error in GetServiceAlertsIntent', { error: error.message });
+        Utils.log('error', 'Error in YesIntent for service alerts', { error: error.message });
         return handlerInput.responseBuilder
           .speak('I\'m sorry, I couldn\'t retrieve service alerts at this time.')
           .getResponse();
@@ -212,7 +212,7 @@ const GetNextDayFerriesIntentHandler = {
           .getResponse();
           
       } catch (error) {
-        Utils.log('error', 'Error in GetNextDayFerriesIntent', { error: error.message });
+        Utils.log('error', 'Error in YesIntent for next day', { error: error.message });
         return handlerInput.responseBuilder
           .speak('I\'m sorry, I had trouble getting tomorrow\'s schedule. Please try again.')
           .getResponse();
@@ -225,6 +225,40 @@ const GetNextDayFerriesIntentHandler = {
       .speak("I'm not sure what you're saying yes to. You can ask me about the next ferries from Red Hook.")
       .reprompt('What would you like to know?')
       .getResponse();
+  }
+};
+
+const GetNextDayFerriesIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextDayFerriesIntent';
+  },
+  async handle(handlerInput) {
+    const requestId = handlerInput.requestEnvelope.request.requestId;
+    Utils.log('info', 'GetNextDayFerriesIntent received', { requestId });
+    
+    try {
+      await ensureServiceInitialized();
+      
+      const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+      const departures = ferryService.getStaticScheduleDepartures(tomorrow);
+      
+      const speakOutput = ferryService.formatDeparturesForSpeech(departures);
+      
+      return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
+        
+    } catch (error) {
+      Utils.log('error', 'Error in GetNextDayFerriesIntent', { 
+        requestId,
+        error: error.message
+      });
+      
+      return handlerInput.responseBuilder
+        .speak('I\'m sorry, I had trouble getting tomorrow\'s ferry schedule. Please try again.')
+        .getResponse();
+    }
   }
 };
 
@@ -594,6 +628,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     LaunchRequestHandler,
     GetNextFerriesIntentHandler,
     GetNextDayFerriesIntentHandler,
+    YesIntentHandler,
     NoIntentHandler,
     GetFerriesWithDirectionIntentHandler,
     GetFerriesAfterTimeIntentHandler,
