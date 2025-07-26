@@ -57,18 +57,12 @@ ALEXA_CLI_AUTOMATION.md
 CLAUDE.md
 GEMINI.md
 
-# Test and development files
-test-interaction-model.js
+# Test and development files (only exclude files with hardcoded sensitive data)
 test-local-interactions.js
 test-dialog.json
-test-live-skill.sh
-test-utterance-skill.sh
 eslint.config.mjs
 jest.config.js
 localTest.js
-
-# Scripts directory (development tools)
-scripts/
 
 # ASK CLI sensitive files
 .ask/ask-states.json
