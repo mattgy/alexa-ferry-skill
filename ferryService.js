@@ -96,13 +96,15 @@ class FerryService {
   }
 
   alertAffectsRedHook(alert) {
-    if (!alert.informedEntity) return true; // Assume system-wide if no specific entity
+    if (!alert.informedEntity || alert.informedEntity.length === 0) {
+      return true; // Assume system-wide if no specific entity
+    }
     
     const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
     
     return alert.informedEntity.some(entity => 
       entity.stopId === redHookStopId ||
-      !entity.stopId // System-wide alert
+      (entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID && !entity.stopId)
     );
   }
 
@@ -135,7 +137,8 @@ class FerryService {
         }
       }
 
-      const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction);
+      const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction)
+        .filter(dep => moment(dep.time).isAfter(searchTime));
       
       for (const staticDep of staticDepartures) {
         const realTimeUpdate = realTimeUpdates.get(staticDep.tripId);
