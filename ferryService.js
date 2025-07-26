@@ -3,6 +3,7 @@ const GtfsRealtimeBindings = require('gtfs-realtime-bindings');
 const moment = require('moment-timezone');
 const config = require('./config');
 const GTFSStaticService = require('./gtfsStaticService');
+const Utils = require('./utils');
 
 class FerryService {
   constructor() {
@@ -14,6 +15,17 @@ class FerryService {
     });
     this.staticService = new GTFSStaticService();
     this.redHookStop = null;
+    
+    // Real-time data cache (4 hours)
+    this.realTimeCache = {
+      schedule: { data: null, timestamp: 0 },
+      alerts: { data: null, timestamp: 0 }
+    };
+    this.realTimeCacheExpiry = 4 * 60 * 60 * 1000; // 4 hours
+    
+    // Retry configuration
+    this.maxRetries = 3;
+    this.retryDelay = 1000; // 1 second
   }
 
   async initialize() {
@@ -34,40 +46,113 @@ class FerryService {
     }
   }
 
+  async retryRequest(requestFunc, maxRetries = this.maxRetries) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await requestFunc();
+      } catch (error) {
+        lastError = error;
+        Utils.log('warn', `Request attempt ${attempt} failed`, { error: error.message, attempt });
+        
+        if (attempt < maxRetries) {
+          const delay = this.retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          Utils.log('info', `Retrying request`, { delay_ms: delay, attempt });
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
+  }
+
   async getFerrySchedule() {
+    // Check if cached data is still valid
+    const now = Date.now();
+    const cacheEntry = this.realTimeCache.schedule;
+    
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+      Utils.log('info', 'Using cached ferry schedule data', { cache_age_ms: now - cacheEntry.timestamp });
+      return cacheEntry.data;
+    }
+    
     try {
-      const response = await this.axiosInstance.get(
-        config.GTFS_REALTIME_TRIP_UPDATES, 
-        { responseType: 'arraybuffer' }
-      );
+      const response = await this.retryRequest(async () => {
+        return await this.axiosInstance.get(
+          config.GTFS_REALTIME_TRIP_UPDATES, 
+          { responseType: 'arraybuffer' }
+        );
+      });
       
       const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
         new Uint8Array(response.data)
       );
       
+      // Cache the data
+      this.realTimeCache.schedule = {
+        data: feed,
+        timestamp: now
+      };
+      
+      Utils.log('info', 'Fetched and cached new ferry schedule data', { entities: feed.entity?.length || 0 });
       return feed;
     } catch (error) {
-      console.error('Error fetching ferry data:', error.message);
+      Utils.log('error', 'Error fetching ferry data after retries', { error: error.message });
+      
+      // If we have cached data, return it even if expired during network issues
+      if (cacheEntry.data) {
+        Utils.log('warn', 'Network error, falling back to expired cached data', { cache_age_ms: now - cacheEntry.timestamp });
+        return cacheEntry.data;
+      }
+      
       return null;
     }
   }
 
   async getServiceAlerts() {
+    // Check if cached data is still valid
+    const now = Date.now();
+    const cacheEntry = this.realTimeCache.alerts;
+    
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+      Utils.log('info', 'Using cached service alerts data', { cache_age_ms: now - cacheEntry.timestamp });
+      return cacheEntry.data;
+    }
+    
     try {
-      const response = await this.axiosInstance.get(
-        config.GTFS_REALTIME_ALERTS,
-        { responseType: 'arraybuffer' }
-      );
+      const response = await this.retryRequest(async () => {
+        return await this.axiosInstance.get(
+          config.GTFS_REALTIME_ALERTS,
+          { responseType: 'arraybuffer' }
+        );
+      });
       
       const feed = GtfsRealtimeBindings.transit_realtime.FeedMessage.decode(
         new Uint8Array(response.data)
       );
       
-      console.log('Raw alerts feed:', JSON.stringify(feed, null, 2));
+      Utils.log('debug', 'Raw alerts feed received', { entities: feed.entity?.length || 0 });
       
-      return this.parseAlerts(feed);
+      const alerts = this.parseAlerts(feed);
+      
+      // Cache the data
+      this.realTimeCache.alerts = {
+        data: alerts,
+        timestamp: now
+      };
+      
+      Utils.log('info', 'Fetched and cached new service alerts data', { alerts_count: alerts.length });
+      return alerts;
     } catch (error) {
-      console.error('Error fetching alerts:', error.message);
+      Utils.log('error', 'Error fetching alerts after retries', { error: error.message });
+      
+      // If we have cached data, return it even if expired during network issues
+      if (cacheEntry.data) {
+        Utils.log('warn', 'Network error, falling back to expired cached alerts', { cache_age_ms: now - cacheEntry.timestamp });
+        return cacheEntry.data;
+      }
+      
       return [];
     }
   }
@@ -138,10 +223,10 @@ class FerryService {
         }
       }
 
-      console.log('Real-time updates:', JSON.stringify(Array.from(realTimeUpdates.entries()), null, 2));
+      Utils.log('debug', 'Real-time updates processed', { updates_count: realTimeUpdates.size });
 
       const staticDepartures = this.getStaticScheduleDepartures(searchTime, direction);
-      console.log('Static departures:', JSON.stringify(staticDepartures, null, 2));
+      Utils.log('debug', 'Static departures retrieved', { departures_count: staticDepartures.length });
       
       for (const staticDep of staticDepartures) {
         const realTimeUpdate = realTimeUpdates.get(staticDep.tripId);
@@ -212,14 +297,14 @@ class FerryService {
       return uniqueDepartures.slice(0, Math.max(config.MAX_DEPARTURES, 5));
       
     } catch (error) {
-      console.error('Error parsing ferry data:', error.message);
+      Utils.log('error', 'Error parsing ferry data', { error: error.message });
       return this.getFallbackDepartures(fromTime, direction);
     }
   }
 
   getStaticScheduleDepartures(searchTime, direction = null) {
     const departures = [];
-    const redHookStopId = '24';
+    const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
     
     try {
       // Try to get departures for the current day first
@@ -252,7 +337,7 @@ class FerryService {
       return uniqueTimesDepartures.slice(0, 15); // Allow reasonable number of unique time slots
       
     } catch (error) {
-      console.error('Error getting static schedule departures:', error.message);
+      Utils.log('error', 'Error getting static schedule departures', { error: error.message });
       return [];
     }
   }
@@ -420,7 +505,8 @@ class FerryService {
         directionLabel: directionLabel || `towards ${destinations[destinations.length - 1] || 'next stops'} `,
         destinations: destinations.slice(0, 3),
         tripId: entity.tripUpdate.trip.tripId,
-        delay: stopUpdate.departure.delay || 0
+        delay: stopUpdate.departure.delay || 0,
+        isStatic: false
       };
     } catch (error) {
       console.error('Error creating departure object:', error.message);
@@ -476,7 +562,7 @@ class FerryService {
       return hour >= serviceHours.start && hour < serviceHours.end;
     }
 
-    const redHookStopId = '24';
+    const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
     
     let earliestTime = null;
     let latestTime = null;
@@ -513,7 +599,7 @@ class FerryService {
     return requestedMinutes >= earliestTime && requestedMinutes <= latestTime;
   }
 
-  formatDeparturesForSpeech(departures, alerts = [], direction = null, destination = null) {
+  formatDeparturesForSpeech(departures, alerts = [], direction = null, destination = null, sessionAttributes = {}) {
     if (departures.length === 0) {
       const now = moment().tz(config.TIMEZONE);
       if (!this.isWithinServiceHours(now)) {
@@ -531,11 +617,6 @@ class FerryService {
     }
 
     let speech = '';
-    
-    if (alerts.length > 0) {
-      const alertText = alerts.map(alert => alert.description).join('. ');
-      speech += `Service alert: ${alertText}. `;
-    }
 
     let destinationPhrase = '';
     if (destination) {
@@ -589,7 +670,47 @@ class FerryService {
       speech += ' Times are based on real-time ferry data.';
     }
 
+    // Add service alerts after ferry times, only if relevant and not already mentioned in session
+    if (alerts.length > 0 && !sessionAttributes.alertsMentioned) {
+      const relevantAlerts = alerts.filter(alert => this.alertAffectsRedHookRoute(alert, departures));
+      if (relevantAlerts.length > 0) {
+        speech += ' Would you like to hear about current service alerts for this route?';
+        // Mark that we've offered alerts in this session
+        sessionAttributes.alertsOffered = true;
+      }
+    }
+
     return speech;
+  }
+
+  alertAffectsRedHookRoute(alert, departures) {
+    // Check if this alert affects any of the departure routes/trips
+    if (!alert.informedEntity || alert.informedEntity.length === 0) {
+      return false;
+    }
+    
+    const departureRoutes = new Set(departures.map(d => d.route || config.SOUTH_BROOKLYN_ROUTE_ID));
+    const departureTrips = new Set(departures.map(d => d.tripId).filter(Boolean));
+    
+    return alert.informedEntity.some(entity => 
+      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID ||
+      departureTrips.has(entity.tripId) ||
+      (entity.stopId && this.redHookStop && entity.stopId === this.redHookStop.id)
+    );
+  }
+
+  formatServiceAlertsForSpeech(alerts) {
+    if (alerts.length === 0) {
+      return 'There are currently no service alerts for Red Hook ferry service.';
+    }
+    
+    const alertTexts = alerts.map(alert => {
+      const header = alert.header || 'Service alert';
+      const description = alert.description || '';
+      return description ? `${header}: ${description}` : header;
+    });
+    
+    return `Current service alert${alerts.length === 1 ? '' : 's'}: ${alertTexts.join('. ')}.`;
   }
 
   groupDeparturesByDirection(departures) {

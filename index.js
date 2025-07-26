@@ -109,17 +109,27 @@ const GetNextFerriesIntentHandler = {
           .slice(0, 6);
       }
       
-      const speakOutput = ferryService.formatDeparturesForSpeech(allDepartures, alerts);
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const speakOutput = ferryService.formatDeparturesForSpeech(allDepartures, alerts, null, null, sessionAttributes);
       
-      // If the user was asked about the next day's schedule, set a session attribute
+      // Update session attributes
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      
+      // Check for different prompts
       if (speakOutput.includes('Would you like to hear more about tomorrow\'s schedule?')) {
-        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
         sessionAttributes.promptedForNextDay = true;
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         
         return handlerInput.responseBuilder
           .speak(speakOutput)
           .reprompt('Would you like to hear more about tomorrow\'s schedule?')
+          .getResponse();
+      }
+      
+      if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .reprompt('Would you like to hear about current service alerts for this route?')
           .getResponse();
       }
       
@@ -148,7 +158,33 @@ const GetNextDayFerriesIntentHandler = {
   async handle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
     
-    if (sessionAttributes.promptedForNextDay) {
+    if (sessionAttributes.alertsOffered) {
+      try {
+        await ensureServiceInitialized();
+        
+        const alerts = await ferryService.getServiceAlerts();
+        const relevantAlerts = alerts.filter(alert => alert.informedEntity && alert.informedEntity.some(entity => 
+          entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID
+        ));
+        
+        const alertSpeech = ferryService.formatServiceAlertsForSpeech(relevantAlerts);
+        
+        // Mark that alerts have been mentioned in this session
+        sessionAttributes.alertsMentioned = true;
+        sessionAttributes.alertsOffered = false;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+        
+        return handlerInput.responseBuilder
+          .speak(alertSpeech)
+          .getResponse();
+          
+      } catch (error) {
+        Utils.log('error', 'Error in GetServiceAlertsIntent', { error: error.message });
+        return handlerInput.responseBuilder
+          .speak('I\'m sorry, I couldn\'t retrieve service alerts at this time.')
+          .getResponse();
+      }
+    } else if (sessionAttributes.promptedForNextDay) {
       try {
         await ensureServiceInitialized();
         
@@ -252,7 +288,18 @@ const GetFerriesAfterTimeIntentHandler = {
         speakOutput = '';
       }
       
-      speakOutput += ferryService.formatDeparturesForSpeech(departures, alerts);
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      speakOutput += ferryService.formatDeparturesForSpeech(departures, alerts, null, null, sessionAttributes);
+      
+      // Update session attributes
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      
+      if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .reprompt('Would you like to hear about current service alerts for this route?')
+          .getResponse();
+      }
       
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -335,7 +382,18 @@ const GetFerriesWithDirectionIntentHandler = {
       }
       
       const departures = ferryService.getNextRedHookDepartures(ferryData, searchTime, direction);
-      const speakOutput = ferryService.formatDeparturesForSpeech(departures, alerts, direction, destination);
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      const speakOutput = ferryService.formatDeparturesForSpeech(departures, alerts, direction, destination, sessionAttributes);
+      
+      // Update session attributes
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+      
+      if (speakOutput.includes('Would you like to hear about current service alerts')) {
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .reprompt('Would you like to hear about current service alerts for this route?')
+          .getResponse();
+      }
       
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -388,14 +446,16 @@ const GetServiceAlertsIntentHandler = {
       await ensureServiceInitialized();
       
       const alerts = await ferryService.getServiceAlerts();
+      const relevantAlerts = alerts.filter(alert => alert.informedEntity && alert.informedEntity.some(entity => 
+        entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID
+      ));
       
-      let speakOutput;
-      if (alerts.length === 0) {
-        speakOutput = 'There are currently no service alerts for Red Hook ferry service.';
-      } else {
-        speakOutput = `There ${alerts.length === 1 ? 'is' : 'are'} ${alerts.length} active service alert${alerts.length === 1 ? '' : 's'}: `;
-        speakOutput += alerts.map(alert => alert.header).join('. ') + '.';
-      }
+      const speakOutput = ferryService.formatServiceAlertsForSpeech(relevantAlerts);
+      
+      // Mark that alerts have been mentioned in this session
+      const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+      sessionAttributes.alertsMentioned = true;
+      handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
       return handlerInput.responseBuilder
         .speak(speakOutput)

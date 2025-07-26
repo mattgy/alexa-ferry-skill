@@ -4,6 +4,7 @@ const csv = require('csv-parser');
 const { Readable } = require('stream');
 const config = require('./config');
 const moment = require('moment-timezone');
+const Utils = require('./utils');
 
 class GTFSStaticService {
     constructor() {
@@ -17,7 +18,32 @@ class GTFSStaticService {
             routePatterns: new Map(), // New: store different route patterns
             lastUpdated: null
         };
-        this.cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
+        this.cacheExpiry = 4 * 60 * 60 * 1000; // 4 hours
+        
+        // Retry configuration
+        this.maxRetries = 3;
+        this.retryDelay = 1000; // 1 second
+    }
+
+    async retryRequest(requestFunc, maxRetries = this.maxRetries) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await requestFunc();
+            } catch (error) {
+                lastError = error;
+                Utils.log('warn', `GTFS request attempt ${attempt} failed`, { error: error.message, attempt });
+                
+                if (attempt < maxRetries) {
+                    const delay = this.retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
+                    Utils.log('info', `Retrying GTFS request`, { delay_ms: delay, attempt });
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        throw lastError;
     }
 
     async loadGTFSData() {
@@ -31,9 +57,11 @@ class GTFSStaticService {
         // Fetching fresh GTFS static data
         
         try {
-            const response = await axios.get(config.GTFS_STATIC_URL, {
-                responseType: 'arraybuffer',
-                timeout: config.REQUEST_TIMEOUT
+            const response = await this.retryRequest(async () => {
+                return await axios.get(config.GTFS_STATIC_URL, {
+                    responseType: 'arraybuffer',
+                    timeout: config.REQUEST_TIMEOUT
+                });
             });
 
             const zip = new AdmZip(response.data);

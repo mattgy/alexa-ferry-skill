@@ -109,14 +109,61 @@ class Utils {
    */
   static log(level, message, data = {}) {
     const timestamp = moment().tz(config.TIMEZONE).format();
+    const sanitizedData = this.sanitizeLogData(data);
     const logEntry = {
       timestamp,
       level: level.toUpperCase(),
       message,
-      ...data
+      ...sanitizedData
     };
     
     console.log(JSON.stringify(logEntry));
+  }
+
+  /**
+   * Sanitize log data to remove sensitive information
+   * @param {Object} data - Data to sanitize
+   * @returns {Object} Sanitized data
+   */
+  static sanitizeLogData(data) {
+    const sanitized = { ...data };
+    
+    // Remove or truncate sensitive fields
+    const sensitiveFields = ['userId', 'accessToken', 'sessionId', 'apiKey', 'password'];
+    
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        delete sanitized[field];
+      }
+    }
+    
+    // Truncate very long stack traces
+    if (sanitized.stack && typeof sanitized.stack === 'string' && sanitized.stack.length > 1000) {
+      sanitized.stack = sanitized.stack.substring(0, 1000) + '... [truncated]';
+    }
+    
+    // Hash requestId if present for correlation without exposing full ID
+    if (sanitized.requestId && typeof sanitized.requestId === 'string') {
+      sanitized.requestIdHash = this.simpleHash(sanitized.requestId);
+      delete sanitized.requestId;
+    }
+    
+    return sanitized;
+  }
+
+  /**
+   * Simple hash function for correlation IDs
+   * @param {string} str - String to hash
+   * @returns {string} Hash
+   */
+  static simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
   }
 
   /**

@@ -140,10 +140,11 @@ describe('FerryService', () => {
         }
       ];
       
-      const result = ferryService.formatDeparturesForSpeech(departures, alerts);
+      const sessionAttributes = {};
+      const result = ferryService.formatDeparturesForSpeech(departures, alerts, null, null, sessionAttributes);
       
-      expect(result).toContain('Service alert');
-      expect(result).toContain('weather');
+      expect(result).toContain('Would you like to hear about current service alerts');
+      expect(result).not.toContain('weather'); // Alerts are now offered, not included directly
     });
 
     it('should handle empty departures', () => {

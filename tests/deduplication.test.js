@@ -66,7 +66,7 @@ describe('Ferry Service Deduplication', () => {
     expect(departures).toHaveLength(1);
     expect(departures[0].tripId).toBe('trip1');
     expect(departures[0].delay).toBe(300);
-    expect(departures[0].isStatic).toBeUndefined(); // Real-time data doesn't have isStatic flag
+    expect(departures[0].isStatic).toBe(false); // Real-time data has isStatic: false
   });
 
   test('should prefer real-time data over static data for same trip', () => {
