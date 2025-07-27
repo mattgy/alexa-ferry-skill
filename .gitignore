@@ -52,24 +52,13 @@ nycferry.zip
 # Local test files
 localTest.js
 
-# Documentation and automation guides (not needed in deployment)
-ALEXA_CLI_AUTOMATION.md
-CLAUDE.md
-GEMINI.md
-
 # Test and development files (only exclude files with hardcoded sensitive data)
 test-local-interactions.js
 test-dialog.json
-eslint.config.mjs
-jest.config.js
 localTest.js
 
 # ASK CLI sensitive files
 .ask/ask-states.json
-
-# Old/duplicate files
-skill.json.template
-models/
 
 # Infrastructure directory (ASK CLI generated)
 infrastructure/
