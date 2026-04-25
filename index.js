@@ -74,7 +74,6 @@ const GetNextFerriesIntentHandler = {
   async handle(handlerInput) {
     const requestId = handlerInput.requestEnvelope.request.requestId;
     Utils.log('info', 'GetNextFerriesIntent received', { requestId });
-    Utils.log('info', 'LAMBDA UPDATED');
     
     try {
       // Ensure ferry service is initialized with static GTFS data
@@ -103,7 +102,7 @@ const GetNextFerriesIntentHandler = {
         .slice(0, 6); // Show up to 6 total departures
 
       if (allDepartures.length === 0) {
-        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
         const nextDayNorthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'northbound');
         const nextDaySouthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'southbound');
         allDepartures = [...nextDayNorthbound, ...nextDaySouthbound]
@@ -198,7 +197,7 @@ const YesIntentHandler = {
       try {
         await ensureServiceInitialized();
         
-        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
         const departures = ferryService.getStaticScheduleDepartures(tomorrow);
         
         const speakOutput = ferryService.formatDeparturesForSpeech(departures);
@@ -240,7 +239,7 @@ const GetNextDayFerriesIntentHandler = {
     try {
       await ensureServiceInitialized();
       
-      const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+      const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
       const departures = ferryService.getStaticScheduleDepartures(tomorrow);
       
       const speakOutput = ferryService.formatDeparturesForSpeech(departures);
@@ -476,21 +475,23 @@ const GetFerriesWithDirectionIntentHandler = {
   
   determineDirection(destination) {
     const dest = destination.toLowerCase();
-    
-    // Northbound destinations (towards Corlears Hook)
+
+    // Northbound destinations (towards Corlears Hook / Manhattan)
     if (dest.includes('wall street') || dest.includes('wall st') || dest.includes('pier 11') ||
         dest.includes('dumbo') || dest.includes('fulton ferry') ||
         dest.includes('atlantic') || dest.includes('bbp') || dest.includes('pier 6') ||
-        dest.includes('corlears') || dest.includes('manhattan') || dest.includes('financial district')) {
+        dest.includes('corlears') || dest.includes('manhattan') || dest.includes('financial district') ||
+        dest.includes('north') || dest.includes('uptown') || dest.includes('downtown') ||
+        dest.includes('city') || dest.includes('midtown')) {
       return 'northbound';
     }
-    
+
     // Southbound destinations (towards Bay Ridge)
     if (dest.includes('bay ridge') || dest.includes('sunset park') || dest.includes('bat') ||
-        dest.includes('governors island') || dest.includes('south')) {
+        dest.includes('governors island') || dest.includes('south') || dest.includes('brooklyn')) {
       return 'southbound';
     }
-    
+
     return null;
   }
 };

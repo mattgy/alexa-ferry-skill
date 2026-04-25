@@ -16,12 +16,13 @@ class FerryService {
     this.staticService = new GTFSStaticService();
     this.redHookStop = null;
     
-    // Real-time data cache (4 hours)
+    // Real-time data cache — trip updates: 90 seconds, alerts: 5 minutes
     this.realTimeCache = {
       schedule: { data: null, timestamp: 0 },
       alerts: { data: null, timestamp: 0 }
     };
-    this.realTimeCacheExpiry = 4 * 60 * 60 * 1000; // 4 hours
+    this.scheduleCacheExpiry = 90 * 1000;         // 90 seconds for trip updates
+    this.alertsCacheExpiry  = 5 * 60 * 1000;      // 5 minutes for service alerts
     
     // Retry configuration
     this.maxRetries = 3;
@@ -72,7 +73,7 @@ class FerryService {
     const now = Date.now();
     const cacheEntry = this.realTimeCache.schedule;
     
-    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.scheduleCacheExpiry) {
       Utils.log('info', 'Using cached ferry schedule data', { cache_age_ms: now - cacheEntry.timestamp });
       return cacheEntry.data;
     }
@@ -115,7 +116,7 @@ class FerryService {
     const now = Date.now();
     const cacheEntry = this.realTimeCache.alerts;
     
-    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.alertsCacheExpiry) {
       Utils.log('info', 'Using cached service alerts data', { cache_age_ms: now - cacheEntry.timestamp });
       return cacheEntry.data;
     }
@@ -187,11 +188,12 @@ class FerryService {
     if (!alert.informedEntity || alert.informedEntity.length === 0) {
       return false;
     }
-    
+
     const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
-    
-    return alert.informedEntity.some(entity => 
-      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID
+
+    return alert.informedEntity.some(entity =>
+      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID ||
+      entity.stopId === redHookStopId
     );
   }
 
@@ -369,8 +371,8 @@ class FerryService {
       const [hours, minutes, seconds] = redHookStop.departureTime.split(':').map(Number);
       const departureTime = searchTime.clone().hour(hours).minute(minutes).second(seconds);
       
-      // For current day, skip if departure already passed
-      if (departureTime.isBefore(moment().tz(config.TIMEZONE))) {
+      // For current day, skip if departure is before the requested search time
+      if (departureTime.isBefore(searchTime)) {
         continue;
       }
       
@@ -630,7 +632,8 @@ class FerryService {
 
     if (departures.length === 1) {
       const dep = departures[0];
-      speech += `The next ferry from Red Hook${destinationPhrase} is at ${dep.timeFormatted}`;
+      const relTime = Utils.getRelativeTime(dep.time);
+      speech += `The next ferry from Red Hook${destinationPhrase} is at ${dep.timeFormatted}, ${relTime}`;
       if (dep.destinations.length > 0) {
         speech += `, heading to ${dep.destinations.join(' and ')} `;
       }
@@ -640,25 +643,28 @@ class FerryService {
       speech += '.';
     } else {
       const groupedDepartures = this.groupDeparturesByDirection(departures);
-      
+
       if (Object.keys(groupedDepartures).length > 1) {
         speech += this.formatMultiDirectionDepartures(groupedDepartures);
       } else {
+        const firstDep = departures[0];
+        const relTime = Utils.getRelativeTime(firstDep.time);
         speech += `The next ${departures.length} ferries from Red Hook${destinationPhrase} are at `;
-        
+
         const routeNames = [...new Set(departures.map(d => d.route))];
         const routePhrase = routeNames.length === 1 ? ` on the ${routeNames[0]}` : '';
-        
+
         departures.forEach((departure, index) => {
-          const delayText = departure.delay > 0 ? 
+          const delayText = departure.delay > 0 ?
             ` (${Math.round(departure.delay / 60)} minutes late)` : '';
-          
+
           if (index === departures.length - 1) {
             speech += `and ${departure.timeFormatted}${delayText}${routePhrase}.`;
           } else {
             speech += `${departure.timeFormatted}${delayText}, `;
           }
         });
+        speech += ` The first departs ${relTime}.`;
       }
     }
 

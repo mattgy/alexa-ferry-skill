@@ -13,7 +13,7 @@ module.exports = {
   
   // Time settings
   TIMEZONE: 'America/New_York',
-  MAX_DEPARTURES: 3,
+  MAX_DEPARTURES: 5,
   
   // API timeout settings
   REQUEST_TIMEOUT: 10000, // 10 seconds
