@@ -13,7 +13,7 @@ fi
 echo "🔧 ASK CLI version: $(ask --version)"
 
 # Check if configured
-if ! ask configure list-profiles --no-color 2>/dev/null | grep -q "Profile"; then
+if ! { [ -f "$HOME/.ask/cli_config" ] || ask configure list-profiles 2>/dev/null | grep -qi "default"; }; then
     echo "⚙️  Configuring ASK CLI..."
     echo "📝 Please complete the browser authentication when prompted..."
     ask configure

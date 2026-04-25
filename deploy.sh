@@ -60,7 +60,7 @@ if command -v ask >/dev/null 2>&1; then
     echo "🎯 ASK CLI found - checking configuration..."
     
     # Check if ASK CLI is configured
-    if ask configure list-profiles --no-color 2>/dev/null | grep -q "Profile"; then
+    if [ -f "$HOME/.ask/cli_config" ] || ask configure list-profiles 2>/dev/null | grep -qi "default"; then
         echo "✅ ASK CLI is configured"
         
         # Check if this is an ASK CLI project with proper structure
