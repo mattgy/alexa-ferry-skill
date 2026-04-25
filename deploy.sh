@@ -85,7 +85,7 @@ if command -v ask >/dev/null 2>&1; then
                 echo "🧪 Testing basic functionality..."
                 
                 # Test the skill if possible
-                if ask simulate -l en-US -t "open red hook ferry" 2>/dev/null; then
+                if ask dialog --locale en-US --replay open\ red\ hook\ ferry 2>/dev/null | grep -q "Welcome"; then
                     echo "✅ Basic skill test passed"
                 else
                     echo "⚠️  Skill test skipped (simulation may not be available)"
