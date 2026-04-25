@@ -32,7 +32,7 @@
     "apis": {
       "custom": {
         "endpoint": {
-          "uri": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:redHookFerrySkill"
+          "uri": "arn:aws:lambda:us-east-1:961233903711:function:redHookFerrySkill"
         },
         "interfaces": []
       }
