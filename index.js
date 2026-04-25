@@ -416,7 +416,7 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!direction) {
         return handlerInput.responseBuilder
-          .speak(`I'm not sure which direction ${destination} is. Try asking for ferries to Wall Street, Bay Ridge, or Corlears Hook.`)
+          .speak(`I'm not sure which way ${destination} is. Try asking for ferries to Wall Street or Bay Ridge.`)
           .reprompt('Which direction would you like to go?')
           .getResponse();
       }
