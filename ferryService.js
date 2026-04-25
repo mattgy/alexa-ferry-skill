@@ -611,12 +611,12 @@ class FerryService {
         
         if (nextDayDepartures.length > 0) {
           const firstDepartureTime = moment(nextDayDepartures[0].time).format('h:mm A');
-          return `Ferry service from Red Hook is currently not operating. Service resumes tomorrow at ${firstDepartureTime}. Would you like to hear more about tomorrow's schedule?`;
+          return `Ferry service is currently not operating. Service resumes tomorrow at ${firstDepartureTime}. Would you like to hear more about tomorrow's schedule?`;
         } else {
-          return 'Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.';
+          return 'Ferry service is currently not operating. Service typically runs from early morning to late evening.';
         }
       }
-      return 'I couldn\'t find any upcoming ferries from Red Hook. The service might be suspended or done for the day.';
+      return 'I couldn\'t find any upcoming ferries. The service might be suspended or done for the day.';
     }
 
     let speech = '';
@@ -633,7 +633,7 @@ class FerryService {
     if (departures.length === 1) {
       const dep = departures[0];
       const relTime = Utils.getRelativeTime(dep.time);
-      speech += `The next ferry from Red Hook${destinationPhrase} is at ${dep.timeFormatted}, ${relTime}`;
+      speech += `The next ferry${destinationPhrase} is at ${dep.timeFormatted}, ${relTime}`;
       if (dep.destinations.length > 0) {
         speech += `, heading to ${dep.destinations.join(' and ')} `;
       }
@@ -649,7 +649,7 @@ class FerryService {
       } else {
         const firstDep = departures[0];
         const relTime = Utils.getRelativeTime(firstDep.time);
-        speech += `The next ${departures.length} ferries from Red Hook${destinationPhrase} are at `;
+        speech += `The next ${departures.length} ferries${destinationPhrase} are at `;
 
         const routeNames = [...new Set(departures.map(d => d.route))];
         const routePhrase = routeNames.length === 1 ? ` on the ${routeNames[0]}` : '';
@@ -672,9 +672,9 @@ class FerryService {
     const hasDelays = departures.some(d => d.delay && d.delay > 0);
     
     if (hasRealTimeData && hasDelays) {
-      speech += ' Times have been adjusted based on real-time ferry tracking.';
+      // Removed disclaimer: speech += ' Times have been adjusted based on real-time ferry tracking.';
     } else if (hasRealTimeData) {
-      speech += ' Times are based on real-time ferry data.';
+      // Removed disclaimer: speech += ' Times are based on real-time ferry data.';
     }
 
     // Add service alerts after ferry times, only if relevant and not already mentioned in session
@@ -759,4 +759,4 @@ class FerryService {
   }
 }
 
-module.exports = FerryService;
+module.exports = FerryService;ports = FerryService;
