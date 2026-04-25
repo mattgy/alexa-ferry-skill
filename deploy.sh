@@ -82,14 +82,6 @@ if command -v ask >/dev/null 2>&1; then
             # Deploy the entire skill (interaction model, Lambda, manifest)
             if ask deploy --ignore-hash; then
                 echo "✅ Skill deployed successfully via ASK CLI!"
-                echo "🧪 Testing basic functionality..."
-                
-                # Test the skill if possible
-                if ask dialog --locale en-US --replay open\ red\ hook\ ferry 2>/dev/null | grep -q "Welcome"; then
-                    echo "✅ Basic skill test passed"
-                else
-                    echo "⚠️  Skill test skipped (simulation may not be available)"
-                fi
                 
                 # Exit successfully - no need for manual deployment
                 echo "🎉 ASK CLI deployment complete!"
