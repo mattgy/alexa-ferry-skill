@@ -58,7 +58,7 @@ test-dialog.json
 localTest.js
 
 # ASK CLI sensitive files
-.ask/ask-states.json
+.ask/
 
 # Agent instruction files
 CLAUDE.md
