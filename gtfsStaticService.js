@@ -37,7 +37,7 @@ class GTFSStaticService {
                 
                 if (attempt < maxRetries) {
                     const delay = this.retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
-                    Utils.log('info', `Retrying GTFS request`, { delay_ms: delay, attempt });
+                    Utils.log('info', 'Retrying GTFS request', { delay_ms: delay, attempt });
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
@@ -203,7 +203,6 @@ class GTFSStaticService {
         }
         
         return new Promise((resolve, reject) => {
-            const stopTimes = [];
             Readable.from([stopTimesData])
                 .pipe(csv())
                 .on('data', (row) => {
@@ -221,12 +220,10 @@ class GTFSStaticService {
                 })
                 .on('end', () => {
                     // Sort stop times by sequence for each trip
-                    for (const [tripId, times] of this.cache.stopTimes) {
+                    for (const [, times] of this.cache.stopTimes) {
                         times.sort((a, b) => a.stopSequence - b.stopSequence);
                     }
                     
-                    const totalStopTimes = Array.from(this.cache.stopTimes.values())
-                        .reduce((sum, times) => sum + times.length, 0);
                     // Loaded stop times data
                     resolve();
                 })
@@ -376,7 +373,7 @@ class GTFSStaticService {
 
     findRedHookStop() {
         // Look for Red Hook stop by name - it's called "Red Hook/Atlantic Basin" in the GTFS data
-        for (const [stopId, stop] of this.cache.stops) {
+        for (const [, stop] of this.cache.stops) {
             const name = stop.name.toLowerCase();
             if (name.includes('red hook') || name.includes('atlantic basin')) {
                 return stop;

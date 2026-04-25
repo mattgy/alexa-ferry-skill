@@ -59,7 +59,7 @@ class FerryService {
         
         if (attempt < maxRetries) {
           const delay = this.retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
-          Utils.log('info', `Retrying request`, { delay_ms: delay, attempt });
+          Utils.log('info', 'Retrying request', { delay_ms: delay, attempt });
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -249,7 +249,7 @@ class FerryService {
         }
       }
       
-      for (const [tripId, realTimeUpdate] of realTimeUpdates) {
+      for (const [, realTimeUpdate] of realTimeUpdates) {
         const departure = this.createDepartureObject(
           realTimeUpdate.entity, 
           realTimeUpdate.stopUpdate, 
@@ -390,7 +390,7 @@ class FerryService {
     return departures;
   }
 
-  createStaticDepartureObject(trip, departureTime, stopTime) {
+  createStaticDepartureObject(trip, departureTime, _stopTime) {
     try {
       const route = this.staticService.getRouteInfo(trip.routeId);
       let destinations = ['next stops'];
@@ -455,7 +455,7 @@ class FerryService {
     return isAfter;
   }
 
-  createDepartureObject(entity, stopUpdate, direction = null) {
+  createDepartureObject(entity, stopUpdate, _direction = null) {
     try {
       const departureTime = moment.unix(stopUpdate.departure.time.low).tz(config.TIMEZONE);
       const tripId = entity.tripUpdate.trip.tripId;
@@ -696,7 +696,6 @@ class FerryService {
       return false;
     }
     
-    const departureRoutes = new Set(departures.map(d => d.route || config.SOUTH_BROOKLYN_ROUTE_ID));
     const departureTrips = new Set(departures.map(d => d.tripId).filter(Boolean));
     
     return alert.informedEntity.some(entity => 

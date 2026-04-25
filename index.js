@@ -222,7 +222,7 @@ const YesIntentHandler = {
     // If not prompted for next day, fall back to a generic response
     Utils.log('warn', 'AMAZON.YesIntent - No matching session context found, falling back to generic response');
     return handlerInput.responseBuilder
-      .speak("I'm not sure what you're saying yes to. You can ask me about the next ferries from Red Hook.")
+      .speak('I\'m not sure what you\'re saying yes to. You can ask me about the next ferries from Red Hook.')
       .reprompt('What would you like to know?')
       .getResponse();
   }
@@ -651,6 +651,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     GetServiceAlertsIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
+    FallbackIntentHandler,
     SessionEndedRequestHandler
   )
   .addRequestInterceptors(RequestInterceptor)
