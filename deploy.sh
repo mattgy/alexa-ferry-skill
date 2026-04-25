@@ -145,39 +145,71 @@ fi
 # Manual deployment fallback
 if [ "$deploy_manually" = true ]; then
     echo "📦 Falling back to manual deployment process..."
-    
-    # Check if AWS CLI is available and configured
-    if command -v aws >/dev/null 2>&1; then
-        # Deploy to AWS Lambda (if function name is provided)
-        if [ ! -z "$LAMBDA_FUNCTION_NAME" ]; then
-            echo "🚀 Deploying to AWS Lambda: $LAMBDA_FUNCTION_NAME"
+
+    if [ ! -z "$LAMBDA_FUNCTION_NAME" ]; then
+        echo "🚀 Deploying to AWS Lambda: $LAMBDA_FUNCTION_NAME"
+
+        # Prefer boto3 via system Python (avoids broken Homebrew aws CLI / pyexpat issue)
+        PYTHON_BIN=""
+        for py in /usr/bin/python3.10 /usr/bin/python3 python3; do
+            if $py -c "import boto3" 2>/dev/null; then
+                PYTHON_BIN="$py"
+                break
+            fi
+        done
+
+        if [ ! -z "$PYTHON_BIN" ]; then
+            echo "📦 Using $PYTHON_BIN + boto3 to upload..."
+            $PYTHON_BIN - <<PYEOF
+import boto3, sys, os
+
+region   = os.environ.get("AWS_REGION", "us-east-1")
+fn_name  = os.environ.get("LAMBDA_FUNCTION_NAME")
+zip_path = os.path.join(os.path.dirname(os.path.abspath("$0")), "skill.zip")
+
+with open(zip_path, "rb") as f:
+    zip_bytes = f.read()
+
+client = boto3.client("lambda", region_name=region)
+try:
+    resp = client.update_function_code(
+        FunctionName=fn_name,
+        ZipFile=zip_bytes,
+        Publish=True
+    )
+    print(f"✅ Lambda updated: {resp['FunctionName']} v{resp['Version']}")
+except Exception as e:
+    print(f"❌ boto3 deploy failed: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
+            if [ $? -eq 0 ]; then
+                echo "✅ Lambda deployment complete!"
+            else
+                echo "❌ Deployment failed. Check AWS credentials (~/.aws/credentials or AWS_ACCESS_KEY_ID env var)."
+                echo "📦 skill.zip is ready — you can upload it manually in the AWS Console."
+            fi
+
+        # Fall back to aws CLI if boto3 unavailable
+        elif command -v aws >/dev/null 2>&1; then
             aws lambda update-function-code \
                 --function-name "$LAMBDA_FUNCTION_NAME" \
                 --zip-file fileb://skill.zip \
                 --region "${AWS_REGION:-us-east-1}"
-            
             echo "✅ Lambda deployment complete!"
-            echo "📝 Still need to manually:"
-            echo "   1. Update the interaction model in Alexa Developer Console"
-            echo "   2. Test the skill in the Alexa Simulator"
         else
-            echo "⚠️  LAMBDA_FUNCTION_NAME not set. Skipping AWS deployment."
-            echo "📦 Deployment package created: skill.zip"
+            echo "⚠️  Neither boto3 nor aws CLI available."
+            echo "📦 Deployment package created: skill.zip — upload it manually."
         fi
     else
-        echo "⚠️  AWS CLI not found. Skipping AWS deployment."
+        echo "⚠️  LAMBDA_FUNCTION_NAME not set in .env. Skipping AWS deployment."
         echo "📦 Deployment package created: skill.zip"
     fi
 
-    echo "📝 Manual deployment steps:"
-    echo "   1. Upload skill.zip to your Lambda function"
-    echo "   2. Update/deploy the interaction model in Alexa Developer Console:"
-    echo "      - Go to https://developer.amazon.com/alexa/console/ask"
-    echo "      - Open your Red Hook Ferry skill"
-    echo "      - Go to Interaction Model → JSON Editor"
-    echo "      - Copy contents from skill-package/interactionModels/custom/en-US.json"
-    echo "      - Paste into JSON Editor, Save Model, Build Model"
-    echo "   3. Test the skill in the Alexa Simulator"
+    echo ""
+    echo "📝 Manual upload alternative:"
+    echo "   1. Go to https://console.aws.amazon.com/lambda"
+    echo "   2. Open the '$LAMBDA_FUNCTION_NAME' function"
+    echo "   3. Upload skill.zip via Code → Upload from → .zip file"
 fi
 
 echo "🎉 Deployment process complete!"

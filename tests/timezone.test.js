@@ -42,7 +42,7 @@ describe.skip('Timezone Boundary Tests', () => {
     ferryService.staticService.isServiceActive = jest.fn().mockReturnValue(true);
     ferryService.staticService.getRouteInfo = jest.fn().mockReturnValue({
       name: 'South Brooklyn Route',
-      southbound: { destinations: ['Pier 11'], direction: 'towards Manhattan' },
+      southbound: { destinations: ['Pier 11'], direction: 'towards East 34th Street' },
       northbound: { destinations: ['Red Hook'], direction: 'towards Brooklyn' }
     });
   });

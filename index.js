@@ -407,8 +407,8 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!destinationSlot || !destinationSlot.value) {
         return handlerInput.responseBuilder
-          .speak('I need to know which direction you want to go. Try asking for ferries to Wall Street, or ferries towards Bay Ridge.')
-          .reprompt('Which direction would you like to go? You can say Wall Street, Bay Ridge, or Corlears Hook.')
+          .speak('I need to know which direction you want to go. Try asking for ferries to East 34th Street, or ferries towards Governors Island.')
+          .reprompt('Which direction would you like to go? You can say East 34th Street, Governors Island, or Corlears Hook.')
           .getResponse();
       }
       
@@ -477,7 +477,7 @@ const GetFerriesWithDirectionIntentHandler = {
   determineDirection(destination) {
     const dest = destination.toLowerCase();
 
-    // Northbound destinations (towards Corlears Hook / Manhattan)
+    // Northbound destinations (towards East 34th Street)
     if (dest.includes('wall street') || dest.includes('wall st') || dest.includes('pier 11') ||
         dest.includes('dumbo') || dest.includes('fulton ferry') ||
         dest.includes('atlantic') || dest.includes('bbp') || dest.includes('pier 6') ||
@@ -487,7 +487,7 @@ const GetFerriesWithDirectionIntentHandler = {
       return 'northbound';
     }
 
-    // Southbound destinations (towards Bay Ridge)
+    // Southbound destinations (towards Governors Island)
     if (dest.includes('bay ridge') || dest.includes('sunset park') || dest.includes('bat') ||
         dest.includes('governors island') || dest.includes('south') || dest.includes('brooklyn')) {
       return 'southbound';

@@ -125,6 +125,12 @@
           "values": [
             {
               "name": {
+                "value": "East 34th Street"
+              },
+              "id": "east_34th_street"
+            },
+            {
+              "name": {
                 "value": "Manhattan"
               },
               "id": "manhattan"

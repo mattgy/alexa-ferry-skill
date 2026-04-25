@@ -28,8 +28,8 @@ describe('Ferry Service Deduplication', () => {
       },
       getRouteInfo: jest.fn().mockReturnValue({
         name: 'South Brooklyn Route',
-        southbound: { destinations: ['Bay Ridge'], direction: 'towards Bay Ridge' },
-        northbound: { destinations: ['Manhattan'], direction: 'towards Manhattan' }
+        southbound: { destinations: ['Governors Island'], direction: 'towards Governors Island' },
+        northbound: { destinations: ['East 34th Street'], direction: 'towards East 34th Street' }
       })
     };
     ferryService.redHookStop = { id: '24', name: 'Red Hook/Atlantic Basin' };

@@ -43,7 +43,7 @@ describe('FerryService', () => {
       },
       getRouteInfo: jest.fn().mockReturnValue({
         name: 'South Brooklyn',
-        southbound: { destinations: ['Bay Ridge'], direction: 'towards Bay Ridge' }
+        southbound: { destinations: ['Governors Island'], direction: 'towards Governors Island' }
       })
     };
     GTFSStaticService.mockImplementation(() => mockStaticService);

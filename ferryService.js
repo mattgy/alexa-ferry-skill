@@ -627,7 +627,7 @@ class FerryService {
     } else if (direction === 'northbound') {
       destinationPhrase = ' to Manhattan';
     } else if (direction === 'southbound') {
-      destinationPhrase = ' to Bay Ridge';
+      destinationPhrase = ' to Governors Island';
     }
 
     if (departures.length === 1) {
@@ -759,4 +759,4 @@ class FerryService {
   }
 }
 
-module.exports = FerryService;ports = FerryService;
+module.exports = FerryService;

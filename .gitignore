@@ -60,5 +60,11 @@ localTest.js
 # ASK CLI sensitive files
 .ask/ask-states.json
 
+# Agent instruction files
+CLAUDE.md
+GEMINI.md
+.claude/
+.gemini/
+
 # Infrastructure directory (ASK CLI generated)
 infrastructure/

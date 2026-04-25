@@ -119,7 +119,7 @@ describe.skip('Integration Tests - Ferry Service with Mocked GTFS', () => {
       name: 'South Brooklyn Route',
       southbound: {
         destinations: ['Battery Park City/West Side', 'Pier 11/Wall St'],
-        direction: 'towards Manhattan'
+        direction: 'towards East 34th Street'
       },
       northbound: {
         destinations: ['Red Hook/Atlantic Basin'],
