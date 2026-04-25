@@ -35,6 +35,8 @@
             "when is the next ferry from red hook",
             "what time is the next ferry",
             "what time is the next ferry from red hook",
+            "for the next ferry",
+            "about the next ferry",
             "check ferry schedule",
             "check red hook ferry schedule",
             "ferry times",
@@ -215,6 +217,15 @@
               "name": {
                 "value": "Gov Island"
               },
+              "id": "gov_island"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+          },
               "id": "gov_island"
             }
           ]

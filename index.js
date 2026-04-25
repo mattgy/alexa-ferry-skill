@@ -67,7 +67,8 @@ const LaunchRequestHandler = {
 const GetNextFerriesIntentHandler = {
   canHandle(handlerInput) {
     const result = Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextFerriesIntent';
+      && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextFerriesIntent'
+        || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NextIntent');
     if (result) Utils.log('info', 'GetNextFerriesIntentHandler.canHandle = true');
     return result;
   },
@@ -570,6 +571,20 @@ const CancelAndStopIntentHandler = {
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
+      .getResponse();
+  }
+};
+
+const FallbackIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
+  },
+  handle(handlerInput) {
+    Utils.log('info', 'AMAZON.FallbackIntent received');
+    return handlerInput.responseBuilder
+      .speak('Sorry, I didn\'t catch that. You can ask for the next ferry, or ask for ferries to Wall Street.')
+      .reprompt('What would you like to know?')
       .getResponse();
   }
 };
