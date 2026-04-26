@@ -397,6 +397,19 @@ class GTFSStaticService {
         const redHookStopId = config.RED_HOOK_STOP_ID;
         const destinations = new Set();
         
+        // Allowed destinations on the South Brooklyn route (per user requirements)
+        const ALLOWED_DESTINATIONS = [
+            'Governors Island',
+            'Atlantic Ave/BBP Pier 6',
+            'Pier 6',
+            'Wall St/Pier 11',
+            'Wall Street',
+            'Pier 11',
+            'Corlears Hook',
+            'East 34th Street',
+            '34th Street'
+        ];
+        
         for (const pattern of patterns) {
             // Skip if direction is specified and doesn't match
             if (direction !== null && pattern.direction != direction) continue;
@@ -406,7 +419,13 @@ class GTFSStaticService {
             
             // Get stops after Red Hook in this pattern
             const stopsAfterRedHook = pattern.stopNames.slice(redHookIndex + 1);
-            stopsAfterRedHook.forEach(stop => destinations.add(stop));
+            
+            stopsAfterRedHook.forEach(stopName => {
+                // Only add if it's in our allowed list
+                if (ALLOWED_DESTINATIONS.some(allowed => stopName.includes(allowed))) {
+                    destinations.add(stopName);
+                }
+            });
         }
         
         return Array.from(destinations);

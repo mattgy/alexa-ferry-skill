@@ -404,7 +404,10 @@ class FerryService {
           destinations = stopsAfterRedHook.map(st => {
             const stopInfo = this.staticService.cache.stops.get(st.stopId);
             return stopInfo ? stopInfo.name : st.stopId;
-          }).filter(name => name !== 'Red Hook/Atlantic Basin');
+          }).filter(name => {
+             const ALLOWED = ['Governors Island', 'Pier 6', 'Wall Street', 'Pier 11', 'Corlears Hook', 'East 34th Street', '34th Street'];
+             return ALLOWED.some(a => name.includes(a));
+          });
         }
       }
       
@@ -625,7 +628,7 @@ class FerryService {
     if (destination) {
       destinationPhrase = ` to ${destination}`;
     } else if (direction === 'northbound') {
-      destinationPhrase = ' to Manhattan';
+      destinationPhrase = ' to East 34th Street';
     } else if (direction === 'southbound') {
       destinationPhrase = ' to Governors Island';
     }
