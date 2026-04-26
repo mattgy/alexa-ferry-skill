@@ -545,11 +545,11 @@ const HelpIntentHandler = {
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
   },
   handle(handlerInput) {
-    const speakOutput = `I can help you check ferry schedules from Red Hook in Brooklyn. Here are some things you can ask me:
+    const speakOutput = `I can help you check ferry schedules with Red Hook Ferry Checker. Here are some things you can ask me:
     
-    Say "when is the next ferry" to get the next departures.
+    Say "when is the next boat" to get upcoming departures.
     Say "ferries after 3 PM" to get departures after a specific time.
-    Say "are there any service alerts" to check for delays or disruptions.
+    Say "are there any service alerts" to check for delays.
     
     What would you like to know?`;
 
@@ -615,7 +615,7 @@ const ErrorHandler = {
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt('You can ask me about the next ferries from Red Hook.')
+      .reprompt('You can ask me about the next ferries from Red Hook Ferry Checker.')
       .getResponse();
   }
 };

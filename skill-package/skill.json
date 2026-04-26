@@ -5,9 +5,9 @@
         "en-US": {
           "summary": "Check ferry schedules from Red Hook Brooklyn with real-time updates and service alerts",
           "examplePhrases": [
-            "Alexa, ask red hook ferry when is the next ferry",
-            "Alexa, ask red hook ferry for ferries to Wall Street",
-            "Alexa, ask red hook ferry are there any service alerts"
+            "Alexa, ask red hook ferry checker when is the next ferry",
+            "Alexa, ask red hook ferry checker for ferries to Wall Street",
+            "Alexa, ask red hook ferry checker are there any service alerts"
           ],
           "keywords": [
             "ferry",

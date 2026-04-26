@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "red hook ferry",
+      "invocationName": "red hook ferry checker",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
@@ -54,7 +54,11 @@
             "what's next",
             "next departures",
             "show me next departures",
-            "what are the next departures"
+            "what are the next departures",
+            "when is the next boat",
+            "for the next boat",
+            "what time is the next boat",
+            "next boat"
           ]
         },
         {
@@ -77,7 +81,11 @@
             "ferries heading to {destination}",
             "departures to {destination}",
             "schedule to {destination}",
-            "ferry times to {destination}"
+            "ferry times to {destination}",
+            "boats to {destination}",
+            "next boat to {destination}",
+            "when is the next boat to {destination}",
+            "boat to {destination}"
           ]
         },
         {
@@ -98,7 +106,11 @@
             "ferry schedule after {time}",
             "when do ferries leave after {time}",
             "ferries later than {time}",
-            "departures after {time}"
+            "departures after {time}",
+            "boats after {time}",
+            "boats leaving after {time}",
+            "next boats after {time}",
+            "boat schedule after {time}"
           ]
         },
         {
@@ -115,7 +127,9 @@
             "check service status",
             "ferry service alerts",
             "any service issues",
-            "service updates"
+            "service updates",
+            "boat alerts",
+            "boat service alerts"
           ]
         }
       ],
@@ -223,15 +237,6 @@
               "name": {
                 "value": "Gov Island"
               },
-              "id": "gov_island"
-            }
-          ]
-        }
-      ]
-    }
-  }
-}
-          },
               "id": "gov_island"
             }
           ]
