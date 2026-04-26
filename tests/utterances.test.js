@@ -58,10 +58,10 @@ describe('Interaction Model Utterances', () => {
     { utterance: 'when do ferries leave', expectedIntent: 'GetNextFerriesIntent' },
     
     // GetFerriesWithDirectionIntent Expected Utterances
-    { utterance: 'ferries to Manhattan', expectedIntent: 'GetFerriesWithDirectionIntent' },
+    { utterance: 'ferries to East 34th Street', expectedIntent: 'GetFerriesWithDirectionIntent' },
     { utterance: 'when is the next ferry to Wall Street', expectedIntent: 'GetFerriesWithDirectionIntent' },
-    { utterance: 'ferry to Dumbo', expectedIntent: 'GetFerriesWithDirectionIntent' },
-    { utterance: 'boats to Manhattan', expectedIntent: 'GetFerriesWithDirectionIntent' },
+    { utterance: 'ferry to Corlears Hook', expectedIntent: 'GetFerriesWithDirectionIntent' },
+    { utterance: 'boats to East 34th Street', expectedIntent: 'GetFerriesWithDirectionIntent' },
     { utterance: 'next boat to Pier 11', expectedIntent: 'GetFerriesWithDirectionIntent' },
     
     // GetFerriesAfterTimeIntent Expected Utterances

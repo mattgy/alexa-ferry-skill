@@ -13,8 +13,8 @@ describe.skip('Integration Tests - Ferry Service with Mocked GTFS', () => {
   const mockGTFSStaticData = {
     stops: new Map([
       ['24', { id: '24', name: 'Red Hook/Atlantic Basin', lat: 40.6756, lon: -74.0089 }],
-      ['PIER11', { id: 'PIER11', name: 'Pier 11/Wall St', lat: 40.7037, lon: -74.0109 }],
-      ['BAT', { id: 'BAT', name: 'Battery Park City/West Side', lat: 40.7096, lon: -74.0176 }]
+      ['PIER11', { id: 'PIER11', name: 'Wall St/Pier 11', lat: 40.7037, lon: -74.0109 }],
+      ['GOVI', { id: 'GOVI', name: 'Governors Island', lat: 40.6913, lon: -74.0163 }]
     ]),
     routes: new Map([
       ['SB', { id: 'SB', name: 'South Brooklyn Route', type: 4 }]
@@ -26,13 +26,11 @@ describe.skip('Integration Tests - Ferry Service with Mocked GTFS', () => {
     stopTimes: new Map([
       ['SB_001', [
         { stopId: '24', arrivalTime: '09:00:00', departureTime: '09:00:00', stopSequence: 1 },
-        { stopId: 'BAT', arrivalTime: '09:15:00', departureTime: '09:15:00', stopSequence: 2 },
-        { stopId: 'PIER11', arrivalTime: '09:30:00', departureTime: '09:30:00', stopSequence: 3 }
+        { stopId: 'GOVI', arrivalTime: '09:15:00', departureTime: '09:15:00', stopSequence: 2 }
       ]],
       ['SB_002', [
         { stopId: 'PIER11', arrivalTime: '10:00:00', departureTime: '10:00:00', stopSequence: 1 },
-        { stopId: 'BAT', arrivalTime: '10:15:00', departureTime: '10:15:00', stopSequence: 2 },
-        { stopId: '24', arrivalTime: '10:30:00', departureTime: '10:30:00', stopSequence: 3 }
+        { stopId: '24', arrivalTime: '10:30:00', departureTime: '10:30:00', stopSequence: 2 }
       ]]
     ]),
     calendar: new Map([
@@ -48,13 +46,13 @@ describe.skip('Integration Tests - Ferry Service with Mocked GTFS', () => {
       ['SB', [
         {
           direction: 0,
-          destinations: ['Battery Park City/West Side', 'Pier 11/Wall St'],
-          direction_label: 'towards Manhattan'
+          destinations: ['Governors Island'],
+          direction_label: 'towards Governors Island'
         },
         {
           direction: 1,
-          destinations: ['Red Hook/Atlantic Basin'],
-          direction_label: 'towards Brooklyn'
+          destinations: ['East 34th Street'],
+          direction_label: 'towards East 34th Street'
         }
       ]]
     ]),
@@ -118,12 +116,12 @@ describe.skip('Integration Tests - Ferry Service with Mocked GTFS', () => {
     ferryService.staticService.getRouteInfo = jest.fn().mockReturnValue({
       name: 'South Brooklyn Route',
       southbound: {
-        destinations: ['Battery Park City/West Side', 'Pier 11/Wall St'],
-        direction: 'towards East 34th Street'
+        destinations: ['Governors Island'],
+        direction: 'towards Governors Island'
       },
       northbound: {
-        destinations: ['Red Hook/Atlantic Basin'],
-        direction: 'towards Brooklyn'
+        destinations: ['East 34th Street'],
+        direction: 'towards East 34th Street'
       }
     });
 

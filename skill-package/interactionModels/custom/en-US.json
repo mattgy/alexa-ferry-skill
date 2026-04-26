@@ -145,6 +145,12 @@
             },
             {
               "name": {
+                "value": "34th Street"
+              },
+              "id": "34th_street"
+            },
+            {
+              "name": {
                 "value": "Manhattan"
               },
               "id": "manhattan"
@@ -181,18 +187,6 @@
             },
             {
               "name": {
-                "value": "Dumbo"
-              },
-              "id": "dumbo"
-            },
-            {
-              "name": {
-                "value": "Fulton Ferry"
-              },
-              "id": "fulton_ferry"
-            },
-            {
-              "name": {
                 "value": "Atlantic Avenue"
               },
               "id": "atlantic_avenue"
@@ -211,21 +205,9 @@
             },
             {
               "name": {
-                "value": "Bay Ridge"
+                "value": "Red Hook"
               },
-              "id": "bay_ridge"
-            },
-            {
-              "name": {
-                "value": "Sunset Park"
-              },
-              "id": "sunset_park"
-            },
-            {
-              "name": {
-                "value": "BAT"
-              },
-              "id": "bat"
+              "id": "red_hook"
             },
             {
               "name": {

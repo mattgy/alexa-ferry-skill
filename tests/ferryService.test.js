@@ -113,7 +113,7 @@ describe('FerryService', () => {
         {
           timeFormatted: '2:30 PM',
           route: 'South Brooklyn',
-          destinations: ['Governors Island', 'Sunset Park/BAT'],
+          destinations: ['Governors Island'],
           delay: 0
         }
       ];
@@ -129,7 +129,7 @@ describe('FerryService', () => {
         {
           timeFormatted: '2:30 PM',
           route: 'South Brooklyn',
-          destinations: ['Governors Island', 'Sunset Park/BAT'],
+          destinations: ['Governors Island'],
           delay: 0
         }
       ];

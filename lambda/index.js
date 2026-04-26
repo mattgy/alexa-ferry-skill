@@ -408,7 +408,7 @@ const GetFerriesWithDirectionIntentHandler = {
       if (!destinationSlot || !destinationSlot.value) {
         return handlerInput.responseBuilder
           .speak('I need to know which direction you want to go. Try asking for ferries to East 34th Street, or ferries towards Governors Island.')
-          .reprompt('Which direction would you like to go? You can say East 34th Street, Governors Island, or Corlears Hook.')
+          .reprompt('Which direction would you like to go? You can say East 34th Street, Governors Island, or Wall Street.')
           .getResponse();
       }
       
@@ -478,18 +478,19 @@ const GetFerriesWithDirectionIntentHandler = {
     const dest = destination.toLowerCase();
 
     // Northbound destinations (towards East 34th Street)
-    if (dest.includes('wall street') || dest.includes('wall st') || dest.includes('pier 11') ||
-        dest.includes('dumbo') || dest.includes('fulton ferry') ||
-        dest.includes('atlantic') || dest.includes('bbp') || dest.includes('pier 6') ||
-        dest.includes('corlears') || dest.includes('manhattan') || dest.includes('financial district') ||
-        dest.includes('north') || dest.includes('uptown') || dest.includes('downtown') ||
-        dest.includes('city') || dest.includes('midtown')) {
+    if (dest.includes('east 34th') || dest.includes('34th street') || 
+        dest.includes('corlears') || dest.includes('wall street') || 
+        dest.includes('wall st') || dest.includes('pier 11') ||
+        dest.includes('pier 6') || dest.includes('atlantic') || 
+        dest.includes('bbp') || dest.includes('manhattan') || 
+        dest.includes('financial district') || dest.includes('north') || 
+        dest.includes('uptown')) {
       return 'northbound';
     }
 
     // Southbound destinations (towards Governors Island)
-    if (dest.includes('bay ridge') || dest.includes('sunset park') || dest.includes('bat') ||
-        dest.includes('governors island') || dest.includes('south') || dest.includes('brooklyn')) {
+    if (dest.includes('governors island') || dest.includes('gov island') || 
+        dest.includes('south')) {
       return 'southbound';
     }
 

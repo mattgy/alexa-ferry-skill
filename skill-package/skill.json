@@ -19,7 +19,7 @@
             "realtime"
           ],
           "name": "Red Hook Ferry Checker",
-          "description": "Get real-time ferry schedules and service alerts for NYC Ferry's Red Hook route. Check departure times to Manhattan (Wall Street/Pier 11) and Governors Island, with live updates and service disruption notifications."
+          "description": "Get real-time ferry schedules and service alerts for NYC Ferry's Red Hook route. Check departure times to East 34th Street and Governors Island, with live updates and service disruption notifications."
         }
       },
       "isAvailableWorldwide": false,

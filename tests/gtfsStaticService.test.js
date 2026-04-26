@@ -155,7 +155,7 @@ describe('GTFSStaticService', () => {
       service.cache.routePatterns.set('SB', [
         {
           stopIds: ['24', 'GOVI', 'BAY'],
-          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island', 'Sunset Park'],
+          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island', 'Pier 6'],
           direction: 0
         }
       ]);
@@ -165,7 +165,7 @@ describe('GTFSStaticService', () => {
       const destinations = service.getDestinationsFromRedHook();
       
       expect(destinations).toContain('Governors Island');
-      expect(destinations).toContain('Sunset Park');
+      expect(destinations).toContain('Pier 6');
       expect(destinations).not.toContain('Red Hook/Atlantic Basin');
     });
 
