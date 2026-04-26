@@ -117,7 +117,7 @@ test_invocation "Ferries to Wall Street" '{
     "context": {"System": {"application": {"applicationId": "test"}, "user": {"userId": "test"}}}
 }'
 
-test_invocation "Ferries to Bay Ridge" '{
+test_invocation "Ferries to Governors Island" '{
     "session": {
         "new": true,
         "sessionId": "test-session-3",
@@ -132,7 +132,7 @@ test_invocation "Ferries to Bay Ridge" '{
         "intent": {
             "name": "GetFerriesWithDirectionIntent",
             "confirmationStatus": "NONE",
-            "slots": {"destination": {"name": "destination", "value": "Bay Ridge"}}
+            "slots": {"destination": {"name": "destination", "value": "Governors Island"}}
         }
     },
     "version": "1.0",

@@ -128,7 +128,7 @@ describe('GTFSStaticService', () => {
       service.cache.routePatterns.set('SB', [
         {
           stopIds: ['24', 'BAY'],
-          stopNames: ['Red Hook/Atlantic Basin', 'Bay Ridge'],
+          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island'],
           direction: 0
         }
       ]);
@@ -155,7 +155,7 @@ describe('GTFSStaticService', () => {
       service.cache.routePatterns.set('SB', [
         {
           stopIds: ['24', 'GOVI', 'BAY'],
-          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island', 'Bay Ridge'],
+          stopNames: ['Red Hook/Atlantic Basin', 'Governors Island', 'Sunset Park'],
           direction: 0
         }
       ]);
@@ -165,7 +165,7 @@ describe('GTFSStaticService', () => {
       const destinations = service.getDestinationsFromRedHook();
       
       expect(destinations).toContain('Governors Island');
-      expect(destinations).toContain('Bay Ridge');
+      expect(destinations).toContain('Sunset Park');
       expect(destinations).not.toContain('Red Hook/Atlantic Basin');
     });
 
@@ -173,6 +173,7 @@ describe('GTFSStaticService', () => {
       const destinations = service.getDestinationsFromRedHook(0);
       
       expect(Array.isArray(destinations)).toBe(true);
+      expect(destinations).toContain('Governors Island');
     });
   });
 });

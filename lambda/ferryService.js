@@ -16,12 +16,13 @@ class FerryService {
     this.staticService = new GTFSStaticService();
     this.redHookStop = null;
     
-    // Real-time data cache (4 hours)
+    // Real-time data cache — trip updates: 90 seconds, alerts: 5 minutes
     this.realTimeCache = {
       schedule: { data: null, timestamp: 0 },
       alerts: { data: null, timestamp: 0 }
     };
-    this.realTimeCacheExpiry = 4 * 60 * 60 * 1000; // 4 hours
+    this.scheduleCacheExpiry = 90 * 1000;         // 90 seconds for trip updates
+    this.alertsCacheExpiry  = 5 * 60 * 1000;      // 5 minutes for service alerts
     
     // Retry configuration
     this.maxRetries = 3;
@@ -58,7 +59,7 @@ class FerryService {
         
         if (attempt < maxRetries) {
           const delay = this.retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
-          Utils.log('info', `Retrying request`, { delay_ms: delay, attempt });
+          Utils.log('info', 'Retrying request', { delay_ms: delay, attempt });
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -72,7 +73,7 @@ class FerryService {
     const now = Date.now();
     const cacheEntry = this.realTimeCache.schedule;
     
-    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.scheduleCacheExpiry) {
       Utils.log('info', 'Using cached ferry schedule data', { cache_age_ms: now - cacheEntry.timestamp });
       return cacheEntry.data;
     }
@@ -115,7 +116,7 @@ class FerryService {
     const now = Date.now();
     const cacheEntry = this.realTimeCache.alerts;
     
-    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.realTimeCacheExpiry) {
+    if (cacheEntry.data && (now - cacheEntry.timestamp) < this.alertsCacheExpiry) {
       Utils.log('info', 'Using cached service alerts data', { cache_age_ms: now - cacheEntry.timestamp });
       return cacheEntry.data;
     }
@@ -187,11 +188,12 @@ class FerryService {
     if (!alert.informedEntity || alert.informedEntity.length === 0) {
       return false;
     }
-    
+
     const redHookStopId = this.redHookStop ? this.redHookStop.id : config.RED_HOOK_STOP_ID;
-    
-    return alert.informedEntity.some(entity => 
-      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID
+
+    return alert.informedEntity.some(entity =>
+      entity.routeId === config.SOUTH_BROOKLYN_ROUTE_ID ||
+      entity.stopId === redHookStopId
     );
   }
 
@@ -247,7 +249,7 @@ class FerryService {
         }
       }
       
-      for (const [tripId, realTimeUpdate] of realTimeUpdates) {
+      for (const [, realTimeUpdate] of realTimeUpdates) {
         const departure = this.createDepartureObject(
           realTimeUpdate.entity, 
           realTimeUpdate.stopUpdate, 
@@ -369,8 +371,8 @@ class FerryService {
       const [hours, minutes, seconds] = redHookStop.departureTime.split(':').map(Number);
       const departureTime = searchTime.clone().hour(hours).minute(minutes).second(seconds);
       
-      // For current day, skip if departure already passed
-      if (departureTime.isBefore(moment().tz(config.TIMEZONE))) {
+      // For current day, skip if departure is before the requested search time
+      if (departureTime.isBefore(searchTime)) {
         continue;
       }
       
@@ -388,7 +390,7 @@ class FerryService {
     return departures;
   }
 
-  createStaticDepartureObject(trip, departureTime, stopTime) {
+  createStaticDepartureObject(trip, departureTime, _stopTime) {
     try {
       const route = this.staticService.getRouteInfo(trip.routeId);
       let destinations = ['next stops'];
@@ -453,7 +455,7 @@ class FerryService {
     return isAfter;
   }
 
-  createDepartureObject(entity, stopUpdate, direction = null) {
+  createDepartureObject(entity, stopUpdate, _direction = null) {
     try {
       const departureTime = moment.unix(stopUpdate.departure.time.low).tz(config.TIMEZONE);
       const tripId = entity.tripUpdate.trip.tripId;
@@ -609,12 +611,12 @@ class FerryService {
         
         if (nextDayDepartures.length > 0) {
           const firstDepartureTime = moment(nextDayDepartures[0].time).format('h:mm A');
-          return `Ferry service from Red Hook is currently not operating. Service resumes tomorrow at ${firstDepartureTime}. Would you like to hear more about tomorrow's schedule?`;
+          return `Ferry service is currently not operating. Service resumes tomorrow at ${firstDepartureTime}. Would you like to hear more about tomorrow's schedule?`;
         } else {
-          return 'Ferry service from Red Hook is currently not operating. Service typically runs from early morning to late evening.';
+          return 'Ferry service is currently not operating. Service typically runs from early morning to late evening.';
         }
       }
-      return 'I couldn\'t find any upcoming ferries from Red Hook. The service might be suspended or done for the day.';
+      return 'I couldn\'t find any upcoming ferries. The service might be suspended or done for the day.';
     }
 
     let speech = '';
@@ -625,12 +627,13 @@ class FerryService {
     } else if (direction === 'northbound') {
       destinationPhrase = ' to Manhattan';
     } else if (direction === 'southbound') {
-      destinationPhrase = ' to Bay Ridge';
+      destinationPhrase = ' to Governors Island';
     }
 
     if (departures.length === 1) {
       const dep = departures[0];
-      speech += `The next ferry from Red Hook${destinationPhrase} is at ${dep.timeFormatted}`;
+      const relTime = Utils.getRelativeTime(dep.time);
+      speech += `The next ferry${destinationPhrase} is at ${dep.timeFormatted}, ${relTime}`;
       if (dep.destinations.length > 0) {
         speech += `, heading to ${dep.destinations.join(' and ')} `;
       }
@@ -640,25 +643,28 @@ class FerryService {
       speech += '.';
     } else {
       const groupedDepartures = this.groupDeparturesByDirection(departures);
-      
+
       if (Object.keys(groupedDepartures).length > 1) {
         speech += this.formatMultiDirectionDepartures(groupedDepartures);
       } else {
-        speech += `The next ${departures.length} ferries from Red Hook${destinationPhrase} are at `;
-        
+        const firstDep = departures[0];
+        const relTime = Utils.getRelativeTime(firstDep.time);
+        speech += `The next ${departures.length} ferries${destinationPhrase} are at `;
+
         const routeNames = [...new Set(departures.map(d => d.route))];
         const routePhrase = routeNames.length === 1 ? ` on the ${routeNames[0]}` : '';
-        
+
         departures.forEach((departure, index) => {
-          const delayText = departure.delay > 0 ? 
+          const delayText = departure.delay > 0 ?
             ` (${Math.round(departure.delay / 60)} minutes late)` : '';
-          
+
           if (index === departures.length - 1) {
             speech += `and ${departure.timeFormatted}${delayText}${routePhrase}.`;
           } else {
             speech += `${departure.timeFormatted}${delayText}, `;
           }
         });
+        speech += ` The first departs ${relTime}.`;
       }
     }
 
@@ -666,9 +672,9 @@ class FerryService {
     const hasDelays = departures.some(d => d.delay && d.delay > 0);
     
     if (hasRealTimeData && hasDelays) {
-      speech += ' Times have been adjusted based on real-time ferry tracking.';
+      // Removed disclaimer: speech += ' Times have been adjusted based on real-time ferry tracking.';
     } else if (hasRealTimeData) {
-      speech += ' Times are based on real-time ferry data.';
+      // Removed disclaimer: speech += ' Times are based on real-time ferry data.';
     }
 
     // Add service alerts after ferry times, only if relevant and not already mentioned in session
@@ -690,7 +696,6 @@ class FerryService {
       return false;
     }
     
-    const departureRoutes = new Set(departures.map(d => d.route || config.SOUTH_BROOKLYN_ROUTE_ID));
     const departureTrips = new Set(departures.map(d => d.tripId).filter(Boolean));
     
     return alert.informedEntity.some(entity => 
@@ -734,7 +739,7 @@ class FerryService {
     
     directions.forEach((direction, dirIndex) => {
       const deps = groupedDepartures[direction];
-      const destinationName = direction === 'northbound' ? 'Manhattan' : 'Bay Ridge';
+      const destinationName = direction === 'northbound' ? 'Manhattan' : 'Governors Island';
       
       if (dirIndex > 0) {
         speech += ', and ';

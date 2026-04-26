@@ -85,7 +85,7 @@ describe('FerryService', () => {
           time: moment().add(30, 'minutes').toDate(),
           timeFormatted: '2:30 PM',
           route: 'South Brooklyn',
-          destinations: ['Bay Ridge'],
+          destinations: ['Governors Island'],
           tripId: 'static-trip',
           isStatic: true
         }
@@ -113,7 +113,7 @@ describe('FerryService', () => {
         {
           timeFormatted: '2:30 PM',
           route: 'South Brooklyn',
-          destinations: ['Governors Island', 'Sunset Park/BAT', 'Bay Ridge'],
+          destinations: ['Governors Island', 'Sunset Park/BAT'],
           delay: 0
         }
       ];
@@ -129,7 +129,7 @@ describe('FerryService', () => {
         {
           timeFormatted: '2:30 PM',
           route: 'South Brooklyn',
-          destinations: ['Governors Island', 'Sunset Park/BAT', 'Bay Ridge'],
+          destinations: ['Governors Island', 'Sunset Park/BAT'],
           delay: 0
         }
       ];

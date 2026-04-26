@@ -67,14 +67,14 @@ const LaunchRequestHandler = {
 const GetNextFerriesIntentHandler = {
   canHandle(handlerInput) {
     const result = Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextFerriesIntent';
+      && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextFerriesIntent'
+        || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NextIntent');
     if (result) Utils.log('info', 'GetNextFerriesIntentHandler.canHandle = true');
     return result;
   },
   async handle(handlerInput) {
     const requestId = handlerInput.requestEnvelope.request.requestId;
     Utils.log('info', 'GetNextFerriesIntent received', { requestId });
-    Utils.log('info', 'LAMBDA UPDATED');
     
     try {
       // Ensure ferry service is initialized with static GTFS data
@@ -103,7 +103,7 @@ const GetNextFerriesIntentHandler = {
         .slice(0, 6); // Show up to 6 total departures
 
       if (allDepartures.length === 0) {
-        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
         const nextDayNorthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'northbound');
         const nextDaySouthbound = ferryService.getNextRedHookDepartures(ferryData, tomorrow, 'southbound');
         allDepartures = [...nextDayNorthbound, ...nextDaySouthbound]
@@ -154,11 +154,11 @@ const GetNextFerriesIntentHandler = {
   }
 };
 
-const GetNextDayFerriesIntentHandler = {
+const YesIntentHandler = {
   canHandle(handlerInput) {
     const result = Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
-    if (result) Utils.log('info', 'GetNextDayFerriesIntentHandler.canHandle = true for AMAZON.YesIntent');
+    if (result) Utils.log('info', 'YesIntentHandler.canHandle = true for AMAZON.YesIntent');
     return result;
   },
   async handle(handlerInput) {
@@ -189,7 +189,7 @@ const GetNextDayFerriesIntentHandler = {
           .getResponse();
           
       } catch (error) {
-        Utils.log('error', 'Error in GetServiceAlertsIntent', { error: error.message });
+        Utils.log('error', 'Error in YesIntent for service alerts', { error: error.message });
         return handlerInput.responseBuilder
           .speak('I\'m sorry, I couldn\'t retrieve service alerts at this time.')
           .getResponse();
@@ -198,7 +198,7 @@ const GetNextDayFerriesIntentHandler = {
       try {
         await ensureServiceInitialized();
         
-        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day').toDate();
+        const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
         const departures = ferryService.getStaticScheduleDepartures(tomorrow);
         
         const speakOutput = ferryService.formatDeparturesForSpeech(departures);
@@ -212,7 +212,7 @@ const GetNextDayFerriesIntentHandler = {
           .getResponse();
           
       } catch (error) {
-        Utils.log('error', 'Error in GetNextDayFerriesIntent', { error: error.message });
+        Utils.log('error', 'Error in YesIntent for next day', { error: error.message });
         return handlerInput.responseBuilder
           .speak('I\'m sorry, I had trouble getting tomorrow\'s schedule. Please try again.')
           .getResponse();
@@ -222,9 +222,43 @@ const GetNextDayFerriesIntentHandler = {
     // If not prompted for next day, fall back to a generic response
     Utils.log('warn', 'AMAZON.YesIntent - No matching session context found, falling back to generic response');
     return handlerInput.responseBuilder
-      .speak("I'm not sure what you're saying yes to. You can ask me about the next ferries from Red Hook.")
+      .speak('I\'m not sure what you\'re saying yes to. You can ask me about the next ferries from Red Hook.')
       .reprompt('What would you like to know?')
       .getResponse();
+  }
+};
+
+const GetNextDayFerriesIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetNextDayFerriesIntent';
+  },
+  async handle(handlerInput) {
+    const requestId = handlerInput.requestEnvelope.request.requestId;
+    Utils.log('info', 'GetNextDayFerriesIntent received', { requestId });
+    
+    try {
+      await ensureServiceInitialized();
+      
+      const tomorrow = moment().tz(config.TIMEZONE).add(1, 'day').startOf('day');
+      const departures = ferryService.getStaticScheduleDepartures(tomorrow);
+      
+      const speakOutput = ferryService.formatDeparturesForSpeech(departures);
+      
+      return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .getResponse();
+        
+    } catch (error) {
+      Utils.log('error', 'Error in GetNextDayFerriesIntent', { 
+        requestId,
+        error: error.message
+      });
+      
+      return handlerInput.responseBuilder
+        .speak('I\'m sorry, I had trouble getting tomorrow\'s ferry schedule. Please try again.')
+        .getResponse();
+    }
   }
 };
 
@@ -373,8 +407,8 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!destinationSlot || !destinationSlot.value) {
         return handlerInput.responseBuilder
-          .speak('I need to know which direction you want to go. Try asking for ferries to Wall Street, or ferries towards Bay Ridge.')
-          .reprompt('Which direction would you like to go? You can say Wall Street, Bay Ridge, or Corlears Hook.')
+          .speak('I need to know which direction you want to go. Try asking for ferries to East 34th Street, or ferries towards Governors Island.')
+          .reprompt('Which direction would you like to go? You can say East 34th Street, Governors Island, or Corlears Hook.')
           .getResponse();
       }
       
@@ -383,7 +417,7 @@ const GetFerriesWithDirectionIntentHandler = {
       
       if (!direction) {
         return handlerInput.responseBuilder
-          .speak(`I'm not sure which direction ${destination} is. Try asking for ferries to Wall Street, Bay Ridge, or Corlears Hook.`)
+          .speak(`I'm not sure which way ${destination} is. Try asking for ferries to Wall Street or Governors Island.`)
           .reprompt('Which direction would you like to go?')
           .getResponse();
       }
@@ -435,28 +469,30 @@ const GetFerriesWithDirectionIntentHandler = {
       });
       
       return handlerInput.responseBuilder
-        .speak('I\'m sorry, I had trouble finding ferries in that direction. Try asking for ferries to Wall Street or Bay Ridge.')
+        .speak('I\'m sorry, I had trouble finding ferries in that direction. Try asking for ferries to Wall Street or Governors Island.')
         .getResponse();
     }
   },
   
   determineDirection(destination) {
     const dest = destination.toLowerCase();
-    
-    // Northbound destinations (towards Corlears Hook)
+
+    // Northbound destinations (towards East 34th Street)
     if (dest.includes('wall street') || dest.includes('wall st') || dest.includes('pier 11') ||
         dest.includes('dumbo') || dest.includes('fulton ferry') ||
         dest.includes('atlantic') || dest.includes('bbp') || dest.includes('pier 6') ||
-        dest.includes('corlears') || dest.includes('manhattan') || dest.includes('financial district')) {
+        dest.includes('corlears') || dest.includes('manhattan') || dest.includes('financial district') ||
+        dest.includes('north') || dest.includes('uptown') || dest.includes('downtown') ||
+        dest.includes('city') || dest.includes('midtown')) {
       return 'northbound';
     }
-    
-    // Southbound destinations (towards Bay Ridge)
+
+    // Southbound destinations (towards Governors Island)
     if (dest.includes('bay ridge') || dest.includes('sunset park') || dest.includes('bat') ||
-        dest.includes('governors island') || dest.includes('south')) {
+        dest.includes('governors island') || dest.includes('south') || dest.includes('brooklyn')) {
       return 'southbound';
     }
-    
+
     return null;
   }
 };
@@ -509,11 +545,11 @@ const HelpIntentHandler = {
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
   },
   handle(handlerInput) {
-    const speakOutput = `I can help you check ferry schedules from Red Hook in Brooklyn. Here are some things you can ask me:
+    const speakOutput = `I can help you check ferry schedules with Red Hook Ferry Checker. Here are some things you can ask me:
     
-    Say "when is the next ferry" to get the next departures.
-    Say "ferries after 3 PM" to get departures after a specific time.
-    Say "are there any service alerts" to check for delays or disruptions.
+    Say "Alexa, ask Red Hook Ferry when is the next boat" to get upcoming departures.
+    Say "Alexa, ask Red Hook Ferry for ferries after 3 PM" to get departures after a specific time.
+    Say "Alexa, ask Red Hook Ferry are there any service alerts" to check for delays.
     
     What would you like to know?`;
 
@@ -535,6 +571,20 @@ const CancelAndStopIntentHandler = {
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
+      .getResponse();
+  }
+};
+
+const FallbackIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
+  },
+  handle(handlerInput) {
+    Utils.log('info', 'AMAZON.FallbackIntent received');
+    return handlerInput.responseBuilder
+      .speak('Sorry, I didn\'t catch that. You can ask for the next ferry, or ask for ferries to Wall Street.')
+      .reprompt('What would you like to know?')
       .getResponse();
   }
 };
@@ -565,7 +615,7 @@ const ErrorHandler = {
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt('You can ask me about the next ferries from Red Hook.')
+      .reprompt('You can ask me about the next ferries by saying, Alexa, ask Red Hook Ferry when is the next boat.')
       .getResponse();
   }
 };
@@ -594,12 +644,14 @@ exports.handler = Alexa.SkillBuilders.custom()
     LaunchRequestHandler,
     GetNextFerriesIntentHandler,
     GetNextDayFerriesIntentHandler,
+    YesIntentHandler,
     NoIntentHandler,
     GetFerriesWithDirectionIntentHandler,
     GetFerriesAfterTimeIntentHandler,
     GetServiceAlertsIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
+    FallbackIntentHandler,
     SessionEndedRequestHandler
   )
   .addRequestInterceptors(RequestInterceptor)

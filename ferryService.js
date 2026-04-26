@@ -739,7 +739,7 @@ class FerryService {
     
     directions.forEach((direction, dirIndex) => {
       const deps = groupedDepartures[direction];
-      const destinationName = direction === 'northbound' ? 'Manhattan' : 'Bay Ridge';
+      const destinationName = direction === 'northbound' ? 'Manhattan' : 'Governors Island';
       
       if (dirIndex > 0) {
         speech += ', and ';
