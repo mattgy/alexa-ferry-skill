@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "red hook ferry checker",
+      "invocationName": "red hook ferry",
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
