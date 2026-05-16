@@ -50,6 +50,7 @@ cp config.js temp_deploy/
 cp package.json temp_deploy/
 cp package-lock.json temp_deploy/
 cp -r node_modules temp_deploy/
+cp -r lambda temp_deploy/
 
 # Create zip from clean directory
 cd temp_deploy
