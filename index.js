@@ -33,31 +33,25 @@ const LaunchRequestHandler = {
     try {
       // Get current service status and any alerts
       const alerts = await ferryService.getServiceAlerts();
-      let speakOutput = 'You can ask for the next ferries from Red Hook, or ask for ferries after a specific time. ';
       
-      // Add any critical alerts to welcome message
-      const criticalAlerts = alerts.filter(alert => 
-        alert.severity === 'SEVERE' || alert.severity === 'HIGH'
-      );
+      // Ultra-short greeting because Alexa+ already introduces the skill
+      let speakOutput = 'Ready. What can I help you with?';
       
-      if (criticalAlerts.length > 0) {
-        speakOutput = `Important: ${criticalAlerts[0].header}. ` + speakOutput;
+      // Only add alerts if they are truly critical (SEVERE)
+      const severeAlerts = alerts.filter(alert => alert.severity === 'SEVERE');
+      if (severeAlerts.length > 0) {
+        speakOutput = `Important: ${severeAlerts[0].header}. ` + speakOutput;
       }
-      
-      const reprompt = 'Try asking: when is the next ferry?';
       
       return handlerInput.responseBuilder
         .speak(speakOutput)
-        .reprompt(reprompt)
+        .reprompt('You can ask for the next ferry or check for delays.')
         .getResponse();
     } catch (error) {
       Utils.log('error', 'Error in launch handler', { error: error.message });
-      
-      const fallbackOutput = 'You can ask me about the next ferries from Red Hook, or ask for ferries after a specific time.';
-      
       return handlerInput.responseBuilder
-        .speak(fallbackOutput)
-        .reprompt('Try asking: when is the next ferry?')
+        .speak('Ready. What can I help you with?')
+        .reprompt('You can ask for the next ferry.')
         .getResponse();
     }
   }
