@@ -33,7 +33,7 @@ const LaunchRequestHandler = {
     try {
       // Get current service status and any alerts
       const alerts = await ferryService.getServiceAlerts();
-      let speakOutput = 'Welcome to Red Hook Ferry Checker. ';
+      let speakOutput = 'You can ask for the next ferries from Red Hook, or ask for ferries after a specific time. ';
       
       // Add any critical alerts to welcome message
       const criticalAlerts = alerts.filter(alert => 
@@ -41,12 +41,10 @@ const LaunchRequestHandler = {
       );
       
       if (criticalAlerts.length > 0) {
-        speakOutput += `Important: ${criticalAlerts[0].header}. `;
+        speakOutput = `Important: ${criticalAlerts[0].header}. ` + speakOutput;
       }
       
-      speakOutput += 'You can ask me about the next ferries leaving from Red Hook in Brooklyn, or ask for ferries after a specific time.';
-      
-      const reprompt = 'Try asking: when is the next ferry from Red Hook?';
+      const reprompt = 'Try asking: when is the next ferry?';
       
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -55,7 +53,7 @@ const LaunchRequestHandler = {
     } catch (error) {
       Utils.log('error', 'Error in launch handler', { error: error.message });
       
-      const fallbackOutput = 'Welcome to Red Hook Ferry Checker. You can ask me about the next ferries leaving from Red Hook in Brooklyn.';
+      const fallbackOutput = 'You can ask me about the next ferries from Red Hook, or ask for ferries after a specific time.';
       
       return handlerInput.responseBuilder
         .speak(fallbackOutput)
