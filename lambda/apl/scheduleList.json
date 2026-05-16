@@ -1,0 +1,24 @@
+{
+  "type": "APL",
+  "version": "1.8",
+  "import": [
+    {
+      "name": "alexa-layouts",
+      "version": "1.5.0"
+    }
+  ],
+  "mainTemplate": {
+    "parameters": [
+      "payload"
+    ],
+    "items": [
+      {
+        "type": "AlexaTextList",
+        "headerTitle": "${payload.listData.title}",
+        "headerSubtitle": "Red Hook Terminal",
+        "headerAttributionImage": "https://s3.amazonaws.com/ask-storage/default-skill-assets/info-modal-attribution.png",
+        "listItems": "${payload.listData.listItems}"
+      }
+    ]
+  }
+}

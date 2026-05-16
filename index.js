@@ -4,6 +4,7 @@ const moment = require('moment-timezone');
 const FerryService = require('./ferryService');
 const Utils = require('./utils');
 const config = require('./config');
+const scheduleListTemplate = require('./lambda/apl/scheduleList.json');
 
 // Initialize ferry service
 const ferryService = new FerryService();
@@ -117,13 +118,26 @@ const GetNextFerriesIntentHandler = {
       // Update session attributes
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
+      // Build response
+      const responseBuilder = handlerInput.responseBuilder.speak(speakOutput);
+
+      // Add APL if supported
+      if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+        responseBuilder.addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          document: scheduleListTemplate,
+          datasources: {
+            listData: ferryService.getAPLListData(allDepartures, 'Next Ferries from Red Hook')
+          }
+        });
+      }
+      
       // Check for different prompts
       if (speakOutput.includes('Would you like to hear more about tomorrow\'s schedule?')) {
         sessionAttributes.promptedForNextDay = true;
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
         
-        return handlerInput.responseBuilder
-          .speak(speakOutput)
+        return responseBuilder
           .reprompt('Would you like to hear more about tomorrow\'s schedule?')
           .getResponse();
       }
@@ -131,15 +145,12 @@ const GetNextFerriesIntentHandler = {
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
         Utils.log('info', 'GetNextFerriesIntent - Setting alertsOffered in session attributes:', sessionAttributes);
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-        return handlerInput.responseBuilder
-          .speak(speakOutput)
+        return responseBuilder
           .reprompt('Would you like to hear about current service alerts for this route?')
           .getResponse();
       }
       
-      return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+      return responseBuilder.getResponse();
         
     } catch (error) {
       Utils.log('error', 'Error in GetNextFerriesIntent', { 
@@ -355,17 +366,29 @@ const GetFerriesAfterTimeIntentHandler = {
       // Update session attributes
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
+      // Build response
+      const responseBuilder = handlerInput.responseBuilder.speak(speakOutput);
+
+      // Add APL if supported
+      if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+        const timeStr = moment(searchTime).tz(config.TIMEZONE).format('h:mm A');
+        responseBuilder.addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          document: scheduleListTemplate,
+          datasources: {
+            listData: ferryService.getAPLListData(departures, `Ferries after ${timeStr}`)
+          }
+        });
+      }
+      
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-        return handlerInput.responseBuilder
-          .speak(speakOutput)
+        return responseBuilder
           .reprompt('Would you like to hear about current service alerts for this route?')
           .getResponse();
       }
       
-      return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+      return responseBuilder.getResponse();
         
     } catch (error) {
       Utils.log('error', 'Error in GetFerriesAfterTimeIntent', { 
@@ -450,17 +473,28 @@ const GetFerriesWithDirectionIntentHandler = {
       // Update session attributes
       handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
       
+      // Build response
+      const responseBuilder = handlerInput.responseBuilder.speak(speakOutput);
+
+      // Add APL if supported
+      if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+        responseBuilder.addDirective({
+          type: 'Alexa.Presentation.APL.RenderDocument',
+          document: scheduleListTemplate,
+          datasources: {
+            listData: ferryService.getAPLListData(departures, `Ferries to ${destination}`)
+          }
+        });
+      }
+      
       if (speakOutput.includes('Would you like to hear about current service alerts')) {
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-        return handlerInput.responseBuilder
-          .speak(speakOutput)
+        return responseBuilder
           .reprompt('Would you like to hear about current service alerts for this route?')
           .getResponse();
       }
       
-      return handlerInput.responseBuilder
-        .speak(speakOutput)
-        .getResponse();
+      return responseBuilder.getResponse();
         
     } catch (error) {
       Utils.log('error', 'Error in GetFerriesWithDirectionIntent', { 

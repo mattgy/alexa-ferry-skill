@@ -722,6 +722,19 @@ class FerryService {
     return `Current service alert${alerts.length === 1 ? '' : 's'}: ${alertTexts.join('. ')}.`;
   }
 
+  getAPLListData(departures, title = 'Upcoming Ferries') {
+    return {
+      title: title,
+      listItems: departures.map(dep => ({
+        primaryText: dep.timeFormatted,
+        secondaryText: `${dep.directionLabel}${dep.delay > 0 ? ' (' + Math.round(dep.delay / 60) + 'm delay)' : ''}`,
+        imageSource: dep.direction === 1 ? 
+          'https://img.icons8.com/color/96/up--v1.png' : 
+          'https://img.icons8.com/color/96/down--v1.png'
+      }))
+    };
+  }
+
   groupDeparturesByDirection(departures) {
     const grouped = {};
     

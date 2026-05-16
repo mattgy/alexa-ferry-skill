@@ -3,7 +3,7 @@
     "publishingInformation": {
       "locales": {
         "en-US": {
-          "summary": "Check ferry schedules from Red Hook Brooklyn with real-time updates and service alerts",
+          "summary": "Check real-time ferry schedules from Red Hook Brooklyn with official NYC Ferry data and service alerts",
           "examplePhrases": [
             "Alexa, ask red hook ferry when is the next ferry",
             "Alexa, ask red hook ferry for ferries to Wall Street",
@@ -16,10 +16,11 @@
             "brooklyn",
             "transportation",
             "schedule",
-            "realtime"
+            "realtime",
+            "nycf"
           ],
           "name": "Red Hook Ferry Checker",
-          "description": "Get real-time ferry schedules and service alerts for NYC Ferry's Red Hook route. Check departure times to East 34th Street and Governors Island, with live updates and service disruption notifications."
+          "description": "Red Hook Ferry Checker provides real-time ferry schedules and service alerts for NYC Ferry's Red Hook route in Brooklyn. This skill uses official GTFS data to provide up-to-the-minute departure times for ferries heading to Wall Street/Pier 11, East 34th Street, Governors Island, and more. Users can check for the next boat, ask about ferries at a specific time, and stay informed about service disruptions or delays."
         }
       },
       "isAvailableWorldwide": false,
@@ -32,9 +33,13 @@
     "apis": {
       "custom": {
         "endpoint": {
-          "uri": "arn:aws:lambda:us-east-1:ACCOUNT_ID:function:redHookFerrySkill"
+          "uri": "arn:aws:lambda:us-east-1:961233903711:function:redHookFerrySkill"
         },
-        "interfaces": []
+        "interfaces": [
+          {
+            "type": "ALEXA_PRESENTATION_APL"
+          }
+        ]
       }
     },
     "manifestVersion": "1.0",

@@ -15,27 +15,33 @@ if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
 fi
 
-# Install all dependencies (including dev dependencies for testing)
-echo "📦 Installing dependencies..."
-npm install
+# Set NODE_PATH to include global modules so jest can find cheerio
+GLOBAL_NPM_ROOT=$(npm root -g)
+export NODE_PATH=".:./node_modules:$GLOBAL_NPM_ROOT"
 
-# Run tests
-echo "🧪 Running tests..."
-npm test
-
-# Install production dependencies only for deployment
-echo "📦 Installing production dependencies..."
-rm -rf node_modules
+# Ensure development environment has local dependencies for runtime
+echo "📦 Ensuring production dependencies are present..."
 npm install --omit=dev
 
-# Create deployment package with only runtime files
-echo "📦 Creating deployment package..."
-rm -f skill.zip
+# Run tests using global jest
+echo "🧪 Running tests..."
+if ! jest --env=node; then
+    echo "❌ Tests failed. Aborting deployment."
+    exit 1
+fi
+
+# Run linting using global eslint
+echo "🧹 Running linting..."
+if ! eslint *.js; then
+    echo "⚠️ Linting warnings/errors found. Continuing deployment..."
+fi
 
 # Create a temporary directory for clean deployment
+echo "📦 Creating clean deployment package..."
+rm -rf temp_deploy
 mkdir -p temp_deploy
 
-# Copy only the essential runtime files
+# Copy runtime files to temp directory
 cp index.js temp_deploy/
 cp ferryService.js temp_deploy/
 cp gtfsStaticService.js temp_deploy/
@@ -43,100 +49,77 @@ cp utils.js temp_deploy/
 cp config.js temp_deploy/
 cp package.json temp_deploy/
 cp package-lock.json temp_deploy/
-
-# Copy node_modules (production dependencies only)
 cp -r node_modules temp_deploy/
 
 # Create zip from clean directory
 cd temp_deploy
+rm -f ../skill.zip
 zip -r ../skill.zip .
 cd ..
 
 # Clean up temp directory
 rm -rf temp_deploy
 
+echo "✅ Deployment package skill.zip created successfully."
+
 # Check for ASK CLI and deploy using it if available
+ASK_BIN=""
 if command -v ask >/dev/null 2>&1; then
-    echo "🎯 ASK CLI found - checking configuration..."
+    ASK_BIN="ask"
+elif [ -f "./node_modules/.bin/ask" ]; then
+    ASK_BIN="./node_modules/.bin/ask"
+elif npx --yes ask --version >/dev/null 2>&1; then
+    ASK_BIN="npx --yes ask"
+fi
+
+if [ ! -z "$ASK_BIN" ]; then
+    echo "🎯 ASK CLI found ($ASK_BIN) - checking configuration..."
     
     # Check if ASK CLI is configured
-    if [ -f "$HOME/.ask/cli_config" ] || ask configure list-profiles 2>/dev/null | grep -qi "default"; then
+    if [ -f "$HOME/.ask/cli_config" ] || $ASK_BIN configure list-profiles 2>/dev/null | grep -qi "default"; then
         echo "✅ ASK CLI is configured"
         
         # Check if this is an ASK CLI project with proper structure
         if [ -f "ask-resources.json" ] && [ -f "skill-package/skill.json" ]; then
             echo "📋 ASK CLI project structure detected"
             
-            # Check if skill is already linked to an existing skill ID
-            if [ -f ".ask/ask-states.json" ]; then
-                echo "🔗 Found existing skill configuration"
+            # Prepare skill manifest with real AWS account ID
+            echo "🔧 Preparing manifest with real AWS Account ID..."
+            AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+            
+            # Use a more portable sed command
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s/ACCOUNT_ID/$AWS_ACCOUNT_ID/g" skill-package/skill.json
             else
-                echo "🆕 First time deployment - will create new skill"
+                sed -i "s/ACCOUNT_ID/$AWS_ACCOUNT_ID/g" skill-package/skill.json
             fi
             
-            echo "🚀 Deploying skill with ASK CLI..."
-            
-            # Prepare skill manifest with real AWS account ID
-            ./deploy-prep.sh
-            
-            # Deploy the entire skill (interaction model, Lambda, manifest)
-            if ask deploy --ignore-hash; then
-                echo "✅ Skill deployed successfully via ASK CLI!"
-                
-                # Exit successfully - no need for manual deployment
-                echo "🎉 ASK CLI deployment complete!"
-                exit 0
+            echo "🚀 Deploying skill metadata with ASK CLI..."
+            # Deploy only the skill metadata (interaction model, manifest)
+            if $ASK_BIN deploy --target skill-metadata --ignore-hash; then
+                echo "✅ Skill metadata deployed successfully via ASK CLI!"
+                # Now proceed to manual Lambda deployment for the code
+                deploy_manually=true
             else
-                echo "❌ ASK CLI deployment failed - falling back to manual deployment"
+                echo "❌ ASK CLI deployment failed - trying fallback"
                 deploy_manually=true
             fi
-            
         else
             echo "⚠️  ASK CLI project structure not complete"
-            echo "📝 Missing files:"
-            [ ! -f "ask-resources.json" ] && echo "   - ask-resources.json"
-            [ ! -f "skill-package/skill.json" ] && echo "   - skill-package/skill.json"
-            [ ! -f "skill-package/interactionModels/custom/en-US.json" ] && echo "   - skill-package/interactionModels/custom/en-US.json"
-            
-            echo "🔧 To fix ASK CLI setup:"
-            echo "   1. Ensure ask-resources.json exists in project root"
-            echo "   2. Ensure skill-package/skill.json exists with skill manifest"
-            echo "   3. Ensure skill-package/interactionModels/custom/en-US.json exists"
-            echo "   4. Run: ask init (if needed to link existing skill)"
-            
-            # Fall back to manual deployment
             deploy_manually=true
         fi
-        
     else
-        echo "⚠️  ASK CLI not configured"
-        echo "📝 To configure ASK CLI:"
-        echo "   1. Run: ask configure"
-        echo "   2. Follow the authentication prompts"
-        echo "   3. Re-run this deployment script"
-        echo ""
-        echo "   For automation, you can also set up ASK CLI with:"
-        echo "   - AWS credentials in ~/.aws/credentials"
-        echo "   - ASK CLI profile in ~/.ask/cli_config"
-        
-        # Fall back to manual deployment
+        echo "⚠️  ASK CLI not configured. Run 'ask configure' or 'npx ask configure'."
         deploy_manually=true
     fi
-    
 else
     echo "⚠️  ASK CLI not found. Install with: npm install -g ask-cli"
-    echo "📝 To enable automatic deployment:"
-    echo "   1. Run: npm install -g ask-cli"
-    echo "   2. Run: ask configure"
-    echo "   3. Re-run this deployment script"
-    
-    # Fall back to manual deployment
     deploy_manually=true
 fi
 
-# Manual deployment fallback
+# Manual or Code-only deployment
 if [ "$deploy_manually" = true ]; then
-    echo "📦 Falling back to manual deployment process..."
+    echo "📦 Proceeding with code deployment..."
 
     if [ ! -z "$LAMBDA_FUNCTION_NAME" ]; then
         echo "🚀 Deploying to AWS Lambda: $LAMBDA_FUNCTION_NAME"
