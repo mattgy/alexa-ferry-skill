@@ -31,19 +31,19 @@ This enhanced Alexa skill provides comprehensive information about ferry departu
 ## 🗣️ Usage Examples
 
 ### Basic Queries
-- "Alexa, open Red Hook Ferry"
-- "Alexa, ask Red Hook Ferry when is the next ferry"
-- "Alexa, ask Red Hook Ferry for the ferry schedule"
+- "Alexa, open Red Hook Ferry Checker"
+- "Alexa, ask Red Hook Ferry Checker when is the next ferry"
+- "Alexa, ask Red Hook Ferry Checker for the ferry schedule"
 
 ### Time-Specific Queries
-- "Alexa, ask Red Hook Ferry for ferries after 3 PM"
-- "Alexa, ask Red Hook Ferry when do ferries leave after 2:30"
-- "Alexa, ask Red Hook Ferry for departures after 5 o'clock"
+- "Alexa, ask Red Hook Ferry Checker for ferries after 3 PM"
+- "Alexa, ask Red Hook Ferry Checker when do ferries leave after 2:30"
+- "Alexa, ask Red Hook Ferry Checker for departures after 5 o'clock"
 
 ### Service Information
-- "Alexa, ask Red Hook Ferry are there any service alerts"
-- "Alexa, ask Red Hook Ferry check for delays"
-- "Alexa, ask Red Hook Ferry about service disruptions"
+- "Alexa, ask Red Hook Ferry Checker are there any service alerts"
+- "Alexa, ask Red Hook Ferry Checker check for delays"
+- "Alexa, ask Red Hook Ferry Checker about service disruptions"
 
 ### Interactive Features
 After asking for ferry times, the skill will prompt:

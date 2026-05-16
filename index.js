@@ -580,9 +580,9 @@ const HelpIntentHandler = {
   handle(handlerInput) {
     const speakOutput = `I can help you check ferry schedules with Red Hook Ferry Checker. Here are some things you can ask me:
     
-    Say "Alexa, ask Red Hook Ferry when is the next boat" to get upcoming departures.
-    Say "Alexa, ask Red Hook Ferry for ferries after 3 PM" to get departures after a specific time.
-    Say "Alexa, ask Red Hook Ferry are there any service alerts" to check for delays.
+    Say "Alexa, ask Red Hook Ferry Checker when is the next boat" to get upcoming departures.
+    Say "Alexa, ask Red Hook Ferry Checker for ferries after 3 PM" to get departures after a specific time.
+    Say "Alexa, ask Red Hook Ferry Checker are there any service alerts" to check for delays.
     
     What would you like to know?`;
 
@@ -648,7 +648,7 @@ const ErrorHandler = {
     
     return handlerInput.responseBuilder
       .speak(speakOutput)
-      .reprompt('You can ask me about the next ferries by saying, Alexa, ask Red Hook Ferry when is the next boat.')
+      .reprompt('You can ask me about the next ferries by saying, Alexa, ask Red Hook Ferry Checker when is the next boat.')
       .getResponse();
   }
 };
