@@ -59,6 +59,7 @@ localTest.js
 
 # ASK CLI sensitive files
 .ask/
+.ask_backup/
 
 # Agent instruction files
 CLAUDE.md
